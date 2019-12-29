@@ -35,14 +35,15 @@ class cl_extractor():
         if cnt["vin"] and vin_regex.match(cnt["vin"]):
             puid = str(cnt["vin"]) + str(math.floor(cnt["mileage"]/5000) * 5000) if cnt["mileage"] is not None else str(cnt["vin"]) 
 
-        return {puid: cnt}
+        cnt["puid"] = puid
+        return cnt
             
 
     @staticmethod
     def get_details(bsc):
         """ Same method for condition, paint, type and title """
         filters = { "vin": re.compile("[vV][iI][nN]: (.*)"), \
-                    "title": re.compile("title status: (.*)"), \
+                    "car_title": re.compile("title status: (.*)"), \
                     "condition": re.compile("condition: (.*)"), \
                     "type": re.compile("type: (.*)"), \
                     "color": re.compile("paint color: (.*)")}
@@ -165,7 +166,7 @@ class cl_extractor():
     def get_postdate(bsc):
         try:
             raw = bsc.select(".postinginfos time")[0]["datetime"]
-            return datetime.datetime.strptime(raw, '%Y-%m-%dT%H:%M:%S%z').timestamp()
+            return datetime.datetime.strptime(raw, '%Y-%m-%dT%H:%M:%S%z')
         except Exception as e:
             raise e
             return None
@@ -174,11 +175,29 @@ class cl_extractor():
     def get_update(bsc):
         try:
             raw = bsc.select(".postinginfos time")[-1]["datetime"]
-            return datetime.datetime.strptime(raw, '%Y-%m-%dT%H:%M:%S%z').timestamp()
+            return datetime.datetime.strptime(raw, '%Y-%m-%dT%H:%M:%S%z')
         except Exception as e:
             raise e
             return None
 
+    
+    @staticmethod
+    def sql_format(ads):
+        text_fields = ['title', 'make', 'condition', 'color', 'vin', 'type', 'url', 'car_title', 'puid']
+        number_fields = ['mileage', 'price']
+        date_fields = ["post_date", "update"]
+        data = []
+        for ad in ads:
+            data_point = {}
+            data_point.update({key: ad[key] for key in number_fields})
+            data_point.update({key: "'" + str(ad[key]) + "'" for key in text_fields})
+            data_point.update({key: "'" + str(ad[key]) + "'" for key in date_fields})
+            data_point["year"] = "'" + str(datetime.datetime.strptime(year+"-01-02T00:00:00Z", '%Y-%m-%dT%H:%M:%S%z')) + "'"
+            data_point["geo"] = "POINT(" + str(ad["geo"]["latitude"]) + " " + str(ad["geo"]["longitude"]) + ")"
+            data.append(data_point)
+        return data
+            
+        
 
 def geo_distance(geo1, geo2):
     """Returns the distance bewteen two points on the globe"""

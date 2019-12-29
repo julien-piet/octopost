@@ -138,24 +138,10 @@ def cl_parser(page, data):
     if not ad:
         return
 
-    for puid in ad:
-        if ad[puid]["make"] is None:
-            data.incompatible += 1
-        elif puid not in data.ads:
-            data.ads[puid] = ad[puid]
-        else:
-            old = data.ads[puid]
-            old["post_date"] = min(old["post_date"], ad[puid]["post_date"])
-            old["update"] = max(old["update"], ad[puid]["update"])
-            try:
-                old["mileage"] = max([i for i in [old["mileage"], ad[puid]["mileage"]] if i is not None])
-            except:
-                pass
-            if ad[puid]["price"][0] not in old["price"]:
-                old["price"].append(ad[puid]["price"][0])
-            if ad[puid]["url"][0] not in old["url"]:
-                old["url"].append(ad[puid]["url"])
-            data.ads[puid] = old
+    if ad["make"] is None:
+        data.incompatible += 1
+    else:
+        data.ads.append(ad)
 
 
 def monitor(data):
