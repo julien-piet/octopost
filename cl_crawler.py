@@ -8,21 +8,27 @@ import threading
 import queue
 from static_data import *
 from cl_parsing import *
+from database_connection import *
 import difflib
 
 class BreakLoop(Exception): pass
 
 class FIFO():
     """Concurrent fifo class"""
-    def __init__(self, maxsize=0):
+    def __init__(self, maxsize=0, chunksize=0):
         self.list = queue.Queue(maxsize) 
+        self.chunksize = chunksize
 
     def put(self, item):
         self.list.put(item)
 
     def pop(self):
-        item = self.list.get()
-        return item
+        if not self.chunksize:
+            item = self.list.get()
+            return item
+        else:
+            item = [self.list.get() for i in range(self.chunksize)]
+            return item
 
 
 def req(sock, url, data):
@@ -103,7 +109,18 @@ def parser(data):
             print("Error occured in parser : " + str(e))
             pass
 
-
+def sql_updater(data):
+    """Function that updates the database"""
+    print("Starting updater")
+    while True:
+        try:
+            jobs = data.update_queue.pop()
+            jobs[0]["handler"]([job["data"] for job in jobs], data)
+        except Exception as e:
+            data.errors.append(e)
+            print("Error occured in updater : " + str(e))
+            pass
+            
 class crawl_data():
 
     def __init__(self, db):
@@ -115,7 +132,8 @@ class crawl_data():
         self.to_be_parsed = FIFO(25000)
         self.errors = []
         self.incompatible = 0
-
+        self.db = database_connection()
+        self.update_queue = FIFO(25000,100)
 
     def load_places():
         ct = BeautifulSoup(requests.get("https://www.craigslist.org/about/sites#US").text, features="html.parser")
@@ -142,6 +160,13 @@ def cl_parser(page, data):
         data.incompatible += 1
     else:
         data.ads.append(ad)
+        data.update_queue.put({'data': ad, 'handler': cl_updater})
+
+
+def cl_updater(item, data):
+    """Updates the database"""
+    raw_data = cl_extractor.sql_format(item)
+    data.db.write("ads", raw_data)
 
 
 def monitor(data):
