@@ -110,7 +110,7 @@ class crawl_data():
         """Initialize global variables"""
         self.seen = {} # In future, get from database
         self.queue = FIFO(25000)
-        self.places = crawl_data.load_places()[0:20]
+        self.places = crawl_data.load_places()
         self.ads = {}
         self.to_be_parsed = FIFO(25000)
         self.errors = []
@@ -193,4 +193,4 @@ def master(feeder_count=1, handler_count=4, parser_count=2):
     monitor(data)
 
 
-master(handler_count=1,parser_count=1)
+master(handler_count=4,parser_count=2)
