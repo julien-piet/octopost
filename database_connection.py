@@ -24,30 +24,42 @@ class database_connection():
 
     def __init__(self, filename="database.ini", section="postgresql"):
         try:
-            params = config()
-            self.conn = psycopg2.connect(**params)
+            self.params = database_connection.config()
+            self.conn = psycopg2.connect(**self.params)
+            self.conn.set_session(autocommit=True)
             self.cur = self.conn.cursor()
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             exit(0)
-       
+
 
     def __del__(self):
         if self.conn is not None:
             self.conn.close()
-
     
+
+    def reset(self):
+        print("Resetting database connection")
+        self.cur.close()
+        self.conn.close()
+        self.conn = psycopg2.connect(**self.params)
+        self.conn.set_session(autocommit=True)
+        self.cur = self.conn.cursor()
+        
+
     def write(self, table, data):
         if not len(data):
             return
-        self.cur.execute("INSERT INTO " + table + " (" + ",".join(data[0].keys()) + ") VALUES (" + "),(".join([",".join(val.values()) for val in data]) + ");") 
-        self.conn.commit()
+        try:
+            self.cur.execute("INSERT INTO " + table + " (" + ",".join(data[0].keys()) + ") VALUES (" + "),(".join([",".join(val.values()) for val in data]) + ");") 
+        except Exception as e:
+            self.reset()
+            self.cur.execute("INSERT INTO " + table + " (" + ",".join(data[0].keys()) + ") VALUES (" + "),(".join([",".join(val.values()) for val in data]) + ");") 
 
     
     def query(self, sql):
         self.cur.execute(sql)
         rtn = self.cur.fetchall()
-        self.cur.commit()
         return rtn
 
 

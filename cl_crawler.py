@@ -9,6 +9,7 @@ import queue
 from static_data import *
 from cl_parsing import *
 from database_connection import *
+from vin_decoding import *
 import difflib
 
 class BreakLoop(Exception): pass
@@ -101,13 +102,13 @@ def parser(data):
     """Function that pops items and handles the job"""
     print("Starting parser")
     while True:
-        try:
-            job = data.to_be_parsed.pop()
-            job["handler"](job["data"], data)
-        except Exception as e:
-            data.errors.append(e)
-            print("Error occured in parser : " + str(e))
-            pass
+        #        try:
+        job = data.to_be_parsed.pop()
+        job["handler"](job["data"], data)
+#        except Exception as e:
+#            data.errors.append(e)
+#            print("Error occured in parser : " + str(e))
+#            pass
 
 def sql_updater(data):
     """Function that updates the database"""
@@ -125,15 +126,16 @@ class crawl_data():
 
     def __init__(self, db):
         """Initialize global variables"""
-        self.seen = {} # In future, get from database
         self.queue = FIFO(25000)
         self.places = crawl_data.load_places()
-        self.ads = {}
         self.to_be_parsed = FIFO(25000)
         self.errors = []
         self.incompatible = 0
+        self.loaded = 0
         self.db = database_connection()
-        self.update_queue = FIFO(25000,100)
+        self.update_queue = FIFO(25000,250)
+        self.seen = {url[0]: True for url in self.db.query("SELECT DISTINCT url FROM ads")}
+        self.vins = vin_decoder(self.db)
 
     def load_places():
         ct = BeautifulSoup(requests.get("https://www.craigslist.org/about/sites#US").text, features="html.parser")
@@ -152,14 +154,14 @@ def cl_details(href, data, sock):
 def cl_parser(page, data):
     """Parser for Craigslist pages"""
     sr = page["content"]
-    ad = cl_extractor.extract(sr, page["url"])
+    ad = cl_extractor.extract(sr, page["url"], data)
     if not ad:
         return
 
     if ad["make"] is None:
         data.incompatible += 1
     else:
-        data.ads.append(ad)
+        data.loaded += 1
         data.update_queue.put({'data': ad, 'handler': cl_updater})
 
 
@@ -173,17 +175,18 @@ def monitor(data):
     """Thread to monitor queue and seen"""
     start = time.time()
     while True:
-        print("T" + str(math.floor(time.time() - start)) + " / Q : " + str(data.queue.list.qsize()) + " / S : " + str(len(data.seen)) + " / A : " + str(len(data.ads)) + " / P : " + str(data.to_be_parsed.list.qsize()) + " / E : " + str(len(data.errors)) + " / I : " + str(data.incompatible))
+        print("T" + str(math.floor(time.time() - start)) + " / Q : " + str(data.queue.list.qsize()) + " / S : " + str(len(data.seen)) + " / P : " + str(data.to_be_parsed.list.qsize()) + " / E : " + str(len(data.errors)) + " / I : " + str(data.incompatible) + " / U : " + str(data.update_queue.list.qsize()) + " / L : " + str(data.loaded))
         time.sleep(60)
 
 
-def master(feeder_count=1, handler_count=4, parser_count=2):
+def master(feeder_count=1, handler_count=2, parser_count=2, updater_count=1):
     """Master of all threads"""
     data = crawl_data(None)
 
     f = []
     h = []
     p = []
+    u = []
 
     for i in range(feeder_count):
         f.append(threading.Thread(target=feeder, args=(data,)))
@@ -194,14 +197,19 @@ def master(feeder_count=1, handler_count=4, parser_count=2):
     for i in range(parser_count):
         h.append(threading.Thread(target=parser, args=(data,)))
 
+    for i in range(updater_count):
+        u.append(threading.Thread(target=sql_updater, args=(data,)))
+
     for th in f:
         th.start()
     for th in h:
         th.start()
     for th in p:
         th.start()
+    for th in u:
+        th.start()
 
     monitor(data)
 
 
-master(handler_count=4,parser_count=2)
+master()

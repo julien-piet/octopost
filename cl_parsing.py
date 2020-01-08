@@ -4,31 +4,29 @@ import math
 import datetime
 from bs4 import BeautifulSoup
 from static_data import *
+from aux import *
 
 class cl_extractor():
 
     @staticmethod
-    def extract(bsc, url):
-        try:
-            cnt = {     "title": cl_extractor.get_title(bsc), \
+    def extract(bsc, url, data):
+        cnt = {     "title": cl_extractor.get_title(bsc), \
                         "make": cl_extractor.get_make(bsc), \
                         "post_date": cl_extractor.get_postdate(bsc), \
                         "geo":  cl_extractor.get_geo(bsc), \
                         "mileage": cl_extractor.get_mileage(bsc), \
                         "year":  cl_extractor.get_year(bsc), \
-                        "price": [cl_extractor.get_price(bsc)], \
+                        "price": cl_extractor.get_price(bsc), \
                         "update": cl_extractor.get_update(bsc), \
-                        "url" : [url]}
-            cnt.update(cl_extractor.get_details(bsc))
-        except Exception as e:
-            print("Parse error on " + url + ": " + str(e))
-            return None
-        
+                        "url" : url}
+        cnt.update(cl_extractor.get_details(bsc))
+        cnt.update(cl_extractor.get_model(bsc,data,cnt))
+
         puid = str(cnt["make"]) + str(cnt["mileage"]) + str(cnt["year"])
         if not cnt["mileage"]:
             puid += str(cnt["price"])
         geo = cnt["geo"]
-        if geo["latitude"] and geo["longitude"]:
+        if geo:
             puid += str(math.floor(int(geo["latitude"]) * 25) / 25) + str(math.floor(int(geo["longitude"]) * 25) / 25)
 
         vin_regex = re.compile("^(?=.*[0-9])(?=.*[A-z])[0-9A-z-]{17}$")
@@ -38,6 +36,15 @@ class cl_extractor():
         cnt["puid"] = puid
         return cnt
             
+
+    @staticmethod
+    def get_model(bsc, data, cnt):
+        """ Get model from VIN number """
+        vin = cnt["vin"]
+        year = cnt["year"]
+        model_info = data.vins.lookup(vin.upper() if vin else vin, year)
+        return model_info
+        
 
     @staticmethod
     def get_details(bsc):
@@ -61,7 +68,10 @@ class cl_extractor():
 
     @staticmethod
     def get_title(bsc):
-        return bsc.select(".postingtitletext")[0].text.replace("-"," ").replace("*","").strip()
+        try:
+            return bsc.select(".postingtitletext")[0].text.replace("-"," ").replace("*","").strip()
+        except Exception as e:
+            return None
     
     @staticmethod
     def get_make(bsc):
@@ -78,16 +88,17 @@ class cl_extractor():
         try:
             return {"latitude": float(geo_obj["data-latitude"]), "longitude": float(geo_obj["data-longitude"])}
         except TypeError:
-            return {"latitude": None, "longitude": None}
+            return None
 
 
     @staticmethod
     def get_mileage(bsc):
+        value = None
         attr = [attr.text for attr in bsc.select(".attrgroup span")]
         for i in attr:
             if not i.find("odometer: "):
-                return int(i[9:])
-        
+                return min(int(i[9:]),9999999)
+       
         # If we get here, the odometer wasn't specified. Look in body / title
         # Title of ad :
 
@@ -95,14 +106,14 @@ class cl_extractor():
 
         for haystack in haystacks:
             hsk = haystack.replace("\n"," ").strip().lower()
-            hsk = re.sub(r"[*-\.\[\]]","",hsk)
+            hsk = re.sub(r"[*-\.:\[\]]","",hsk)
             mtch = re.search(r"([1-9]\d*k|\d+(?:,\d+)?)[ ]*(?:original|actual|low){0,2}[ ]*miles",hsk)
             if mtch:
                 val = mtch.group(1)
                 if val[-1] == 'k':
                     val = val[:-1] + "000"
                 val = val.replace(",","")
-                return int(val)
+                return min(int(val),9999999)
                 
         return None
 
@@ -150,7 +161,7 @@ class cl_extractor():
 
         for haystack in haystacks:
             hsk = haystack.replace("\n"," ").strip().lower()
-            hsk = re.sub(r"[*-\.\[\]]","",hsk)
+            hsk = re.sub(r"[*-\[\]]","",hsk)
             mtch = filt.search(hsk)
             if mtch:
                 val = mtch.group(1)
@@ -183,22 +194,25 @@ class cl_extractor():
     
     @staticmethod
     def sql_format(ads):
-        text_fields = ['title', 'make', 'condition', 'color', 'vin', 'type', 'url', 'car_title', 'puid']
+        text_fields = ['title', 'make', 'condition', 'color', 'vin', 'type', 'url', 'car_title', 'puid', "model", 'trim', 'series']
         number_fields = ['mileage', 'price']
         date_fields = ["post_date", "update"]
         data = []
         for ad in ads:
             data_point = {}
-            data_point.update({key: ad[key] for key in number_fields})
-            data_point.update({key: "'" + str(ad[key]) + "'" for key in text_fields})
-            data_point.update({key: "'" + str(ad[key]) + "'" for key in date_fields})
-            data_point["year"] = "'" + str(datetime.datetime.strptime(year+"-01-02T00:00:00Z", '%Y-%m-%dT%H:%M:%S%z')) + "'"
-            data_point["geo"] = "POINT(" + str(ad["geo"]["latitude"]) + " " + str(ad["geo"]["longitude"]) + ")"
+            data_point.update({key: str_or_null(ad[key]) for key in number_fields})
+            data_point.update({key: "'" + str_or_null(ad[key]) + "'" for key in text_fields})
+            data_point.update({key: "'" + str_or_null(ad[key]) + "'" for key in date_fields})
+            data_point["year"] = "null"
+            data_point["geo"] = "null"
+            if "year" in ad and ad["year"] is not None:
+                data_point["year"] = "'" + str(datetime.datetime.strptime(str(ad['year'])+"-01-02T00:00:00-0000", '%Y-%m-%dT%H:%M:%S%z')) + "'"
+            if 'geo' in ad and ad["geo"] is not None:
+                data_point["geo"] = "'POINT(" + str(ad["geo"]["latitude"]) + " " + str(ad["geo"]["longitude"]) + ")'"
             data.append(data_point)
         return data
             
-        
-
+       
 def geo_distance(geo1, geo2):
     """Returns the distance bewteen two points on the globe"""
     lo1 = geo1["longitude"] * math.pi / 180
