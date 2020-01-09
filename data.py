@@ -31,7 +31,7 @@ class crawl_data():
         self.feed_queue = FIFO(15000)
         self.fetch_queue = FIFO(15000)
         self.parse_queue = FIFO(15000)
-        self.lookup_queue = FIFO(15000)
+        self.lookup_queue = FIFO(15000, 25)
         self.update_queue = FIFO(15000, 25)
 
         self.places = crawl_data.load_places()

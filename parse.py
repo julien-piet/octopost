@@ -30,4 +30,5 @@ def parse(data, url, content):
         if ad["vin"] and 9 <= len(ad["vin"]) <= 17 and ad["vin"][:9] not in data.vins:
             data.vins[ad["vin"][:9]] = True
             vin, year = ad["vin"], ad["year"]
-            data.lookup_queue.put(lambda x, y, vin=vin, year=year: lookup(x, y, vin, year))
+            # data.lookup_queue.put(lambda x, y, vin=vin, year=year: lookup(x, y, vin, year))
+            data.lookup_queue.put({'vin': vin, 'year': year})

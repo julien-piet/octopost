@@ -24,3 +24,13 @@ class session():
             self.data.errors.append(e)
             self.data.log.append("Error occurred while loading url {} : {}".format(url, str(e)))
             return None
+
+    def post(self, url, data):
+        """Wrapper around requests post, to handle errors"""
+        try:
+            rq = self.session.post(url, data=data)
+            return rq.text
+        except Exception as e:
+            self.data.errors.append(e)
+            self.data.log.append("Error occurred while loading url {} : {}".format(url, str(e)))
+            return None

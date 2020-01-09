@@ -8,6 +8,7 @@ from session import *
 from data import *
 from update import update
 from feeder import *
+from lookup import advanced_lookup
 
 
 def handler(data, job_queue, name, need_session=False):
@@ -64,7 +65,7 @@ def master(feeder_count=1, fetch_count=3, parse_count=2, update_count=1, lookup_
         ths.append(threading.Thread(target=update, args=(data, )))
 
     for i in range(lookup_count):
-        ths.append(threading.Thread(name="Lookup {}".format(i+1), target=handler, args=(data, data.lookup_queue, "Lookup {}".format(i+1), True,)))
+        ths.append(threading.Thread(name="Lookup {}".format(i+1), target=advanced_lookup, args=(data, )))
 
     for th in ths:
         th.start()
