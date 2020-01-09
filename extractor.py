@@ -2,48 +2,32 @@
 import re
 import math
 import datetime
-from bs4 import BeautifulSoup
 from static_data import *
-from aux import *
 
-class cl_extractor():
+
+class extractor():
 
     @staticmethod
-    def extract(bsc, url, data):
-        cnt = {     "title": cl_extractor.get_title(bsc), \
-                        "make": cl_extractor.get_make(bsc), \
-                        "post_date": cl_extractor.get_postdate(bsc), \
-                        "geo":  cl_extractor.get_geo(bsc), \
-                        "mileage": cl_extractor.get_mileage(bsc), \
-                        "year":  cl_extractor.get_year(bsc), \
-                        "price": cl_extractor.get_price(bsc), \
-                        "update": cl_extractor.get_update(bsc), \
-                        "url" : url}
-        cnt.update(cl_extractor.get_details(bsc))
-        cnt.update(cl_extractor.get_model(bsc,data,cnt))
-
-        puid = str(cnt["make"]) + str(cnt["mileage"]) + str(cnt["year"])
-        if not cnt["mileage"]:
-            puid += str(cnt["price"])
-        geo = cnt["geo"]
+    def get_puid(ad):
+        puid = str(ad["make"]) + str(ad["mileage"]) + str(ad["year"])
+        if not ad["mileage"]:
+            puid += str(ad["price"])
+        geo = ad["geo"]
         if geo:
             puid += str(math.floor(int(geo["latitude"]) * 25) / 25) + str(math.floor(int(geo["longitude"]) * 25) / 25)
 
         vin_regex = re.compile("^(?=.*[0-9])(?=.*[A-z])[0-9A-z-]{17}$")
-        if cnt["vin"] and vin_regex.match(cnt["vin"]):
-            puid = str(cnt["vin"]) + str(math.floor(cnt["mileage"]/5000) * 5000) if cnt["mileage"] is not None else str(cnt["vin"]) 
+        if ad["vin"] and vin_regex.match(ad["vin"]):
+            puid = str(ad["vin"]) + str(math.floor(ad["mileage"] / 5000) * 5000) if ad["mileage"] is not None else str(cnt["vin"])
 
-        cnt["puid"] = puid
-        return cnt
+        return puid
             
 
     @staticmethod
     def get_model(bsc, data, cnt):
         """ Get model from VIN number """
-        vin = cnt["vin"]
-        year = cnt["year"]
-        model_info = data.vins.lookup(vin.upper() if vin else vin, year)
-        return model_info
+        # TODO : Get model if vin doesn't exist
+        return {}
         
 
     @staticmethod
@@ -190,43 +174,3 @@ class cl_extractor():
         except Exception as e:
             raise e
             return None
-
-    
-    @staticmethod
-    def sql_format(ads):
-        text_fields = ['title', 'make', 'condition', 'color', 'vin', 'type', 'url', 'car_title', 'puid', "model", 'trim', 'series']
-        number_fields = ['mileage', 'price']
-        date_fields = ["post_date", "update"]
-        data = []
-        for ad in ads:
-            data_point = {}
-            data_point.update({key: str_or_null(ad[key]) for key in number_fields})
-            data_point.update({key: "'" + str_or_null(ad[key]) + "'" for key in text_fields})
-            data_point.update({key: "'" + str_or_null(ad[key]) + "'" for key in date_fields})
-            data_point["year"] = "null"
-            data_point["geo"] = "null"
-            if "year" in ad and ad["year"] is not None:
-                data_point["year"] = "'" + str(datetime.datetime.strptime(str(ad['year'])+"-01-02T00:00:00-0000", '%Y-%m-%dT%H:%M:%S%z')) + "'"
-            if 'geo' in ad and ad["geo"] is not None:
-                data_point["geo"] = "'POINT(" + str(ad["geo"]["latitude"]) + " " + str(ad["geo"]["longitude"]) + ")'"
-            data.append(data_point)
-        return data
-            
-       
-def geo_distance(geo1, geo2):
-    """Returns the distance bewteen two points on the globe"""
-    lo1 = geo1["longitude"] * math.pi / 180
-    lo2 = geo2["longitude"] * math.pi / 180
-    la1 = geo1["latitude"] * math.pi / 180
-    la2 = geo2["latitude"] * math.pi / 180
-
-    if not (la1 and la2 and lo1 and lo2):
-        return None
-
-    a = math.sin((la2 - la1) / 2)**2 + \
-        math.cos(la1) * math.cos(la2) * \
-        math.sin((lo2 - lo1) / 2)**2
-
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-    R = 6371000
-    return R*c

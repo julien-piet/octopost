@@ -1,7 +1,7 @@
 """ Manage postgresql database connection """
+
 from configparser import ConfigParser
 import psycopg2
-import datetime
 
 
 class database_connection():
@@ -62,6 +62,3 @@ class database_connection():
         rtn = self.cur.fetchall()
         return rtn
 
-
-
-        
