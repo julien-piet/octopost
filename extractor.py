@@ -18,13 +18,13 @@ class extractor():
 
         vin_regex = re.compile("^(?=.*[0-9])(?=.*[A-z])[0-9A-z-]{17}$")
         if ad["vin"] and vin_regex.match(ad["vin"]):
-            puid = str(ad["vin"]) + str(math.floor(ad["mileage"] / 5000) * 5000) if ad["mileage"] is not None else str(ad["vin"])
+            puid = str(ad["vin"]) + str(math.floor(ad["mileage"] / 5000) * 5000) if ad["mileage"] is not None else str(
+                ad["vin"])
 
         return puid
-            
 
     @staticmethod
-    def get_model(bsc, data, cnt):
+    def get_model(bsc, data, ad):
         """ Get model from VIN number """
 
         filt = re.compile("[A-HJ-NPR-Z0-9]{9}")
@@ -37,7 +37,6 @@ class extractor():
         make = ad["make"]
         if make not in data.models:
             return {}
-
 
         # If we get here, we need to determine the vehicle model from the content of the ad
         haystack = [[attr.text for attr in bsc.select(".attrgroup span")][0], \
@@ -52,7 +51,7 @@ class extractor():
         for pile in haystack:
             if model and trim and series:
                 break
-            for needle in pile.replace("*","").replace(".","").split(" ")
+            for needle in pile.replace("*", "").replace(".", "").split(" "):
                 # First try : Is this a model name ? 
                 if not model and needle.lower() in data.models[make]["model_to_trim"].keys():
                     model = needle.lower()
@@ -89,15 +88,14 @@ class extractor():
         print(results)
         return results
 
-
     @staticmethod
     def get_details(bsc):
         """ Same method for condition, paint, type and title """
-        filters = { "vin": re.compile("[vV][iI][nN]: (.*)"), \
-                    "car_title": re.compile("title status: (.*)"), \
-                    "condition": re.compile("condition: (.*)"), \
-                    "type": re.compile("type: (.*)"), \
-                    "color": re.compile("paint color: (.*)")}
+        filters = {"vin": re.compile("[vV][iI][nN]: (.*)"), \
+                   "car_title": re.compile("title status: (.*)"), \
+                   "condition": re.compile("condition: (.*)"), \
+                   "type": re.compile("type: (.*)"), \
+                   "color": re.compile("paint color: (.*)")}
 
         rtn = {key: None for key in filters}
         attr = [attr.text for attr in bsc.select(".attrgroup span")]
@@ -110,24 +108,22 @@ class extractor():
                     else:
                         rtn[filt] = mtch.group(1)
         return rtn
-        
-
 
     @staticmethod
     def get_title(bsc):
         try:
-            return bsc.select(".postingtitletext")[0].text.replace("-"," ").replace("*","").strip()
+            return bsc.select(".postingtitletext")[0].text.replace("-", " ").replace("*", "").strip()
         except Exception as e:
             return None
-    
+
     @staticmethod
     def get_make(bsc):
-        keywords = [elt for attr in bsc.select(".attrgroup span") for elt in attr.text.replace("-"," ").replace("*","").strip().split(" ")]
-        keywords.extend(bsc.select(".postingtitletext")[0].text.replace("-"," ").replace("*","").strip().split(" "))
+        keywords = [elt for attr in bsc.select(".attrgroup span") for elt in
+                    attr.text.replace("-", " ").replace("*", "").strip().split(" ")]
+        keywords.extend(bsc.select(".postingtitletext")[0].text.replace("-", " ").replace("*", "").strip().split(" "))
         for kw in keywords:
             if kw.lower() in makes:
                 return makes[kw.lower()]
-    
 
     @staticmethod
     def get_geo(bsc):
@@ -137,33 +133,31 @@ class extractor():
         except TypeError:
             return None
 
-
     @staticmethod
     def get_mileage(bsc):
         value = None
         attr = [attr.text for attr in bsc.select(".attrgroup span")]
         for i in attr:
             if not i.find("odometer: "):
-                return min(int(i[9:]),9999999)
-       
+                return min(int(i[9:]), 9999999)
+
         # If we get here, the odometer wasn't specified. Look in body / title
         # Title of ad :
 
         haystacks = [bsc.select(".postingtitletext")[0].text, bsc.find(id="postingbody").text]
 
         for haystack in haystacks:
-            hsk = haystack.replace("\n"," ").strip().lower()
-            hsk = re.sub(r"[*-\.:\[\]]","",hsk)
-            mtch = re.search(r"([1-9]\d*k|\d+(?:,\d+)?)[ ]*(?:original|actual|low){0,2}[ ]*miles",hsk)
+            hsk = haystack.replace("\n", " ").strip().lower()
+            hsk = re.sub(r"[*-\.:\[\]]", "", hsk)
+            mtch = re.search(r"([1-9]\d*k|\d+(?:,\d+)?)[ ]*(?:original|actual|low){0,2}[ ]*miles", hsk)
             if mtch:
                 val = mtch.group(1)
                 if val[-1] == 'k':
                     val = val[:-1] + "000"
-                val = val.replace(",","")
-                return min(int(val),9999999)
-                
-        return None
+                val = val.replace(",", "")
+                return min(int(val), 9999999)
 
+        return None
 
     @staticmethod
     def get_year(bsc):
@@ -171,18 +165,18 @@ class extractor():
             return int([attr.text for attr in bsc.select(".attrgroup span")][0][:4])
         except:
             pass
-        
+
         # The hard way : look for a number between 1970 and this year
         max_year = datetime.datetime.now().year
-        ys = [str(i) for i in range(1970,max_year+1)]
-        ys.extend([str(i)[-2:] for i in range(1970,max_year+1)])
+        ys = [str(i) for i in range(1970, max_year + 1)]
+        ys.extend([str(i)[-2:] for i in range(1970, max_year + 1)])
         filt = re.compile(" (" + '|'.join(ys) + ")[']? ")
 
         haystacks = [bsc.select(".postingtitletext")[0].text, bsc.find(id="postingbody").text]
 
         for haystack in haystacks:
-            hsk = haystack.replace("\n"," ").strip().lower()
-            hsk = re.sub(r"[*-\.\[\]]","",hsk)
+            hsk = haystack.replace("\n", " ").strip().lower()
+            hsk = re.sub(r"[*-\.\[\]]", "", hsk)
             mtch = filt.search(hsk)
             if mtch:
                 year = int(mtch.group(1))
@@ -191,35 +185,33 @@ class extractor():
                 elif year < 100:
                     year += 1900
                 return year
-                
-        return None
 
+        return None
 
     @staticmethod
     def get_price(bsc):
         try:
-            val = int(bsc.select(".price")[0].text.replace("$",""))
+            val = int(bsc.select(".price")[0].text.replace("$", ""))
             return val if 0 < val < 70000000 else None
         except:
             pass
-        
+
         # The hard way
         filt = re.compile("\$[ ]*([1-9]\d*k|\d+(?:,\d+)?)")
         haystacks = [bsc.select(".postingtitletext")[0].text, bsc.find(id="postingbody").text]
 
         for haystack in haystacks:
-            hsk = haystack.replace("\n"," ").strip().lower()
-            hsk = re.sub(r"[*-\[\]]","",hsk)
+            hsk = haystack.replace("\n", " ").strip().lower()
+            hsk = re.sub(r"[*-\[\]]", "", hsk)
             mtch = filt.search(hsk)
             if mtch:
                 val = mtch.group(1)
                 if val[-1] == 'k':
                     val = val[:-1] + "000"
-                val = val.replace(",","")
+                val = val.replace(",", "")
                 return int(val) if 0 < int(val) < 70000000 else None
-                
-        return None
 
+        return None
 
     @staticmethod
     def get_postdate(bsc):
