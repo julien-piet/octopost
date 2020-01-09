@@ -8,7 +8,7 @@ from session import *
 from data import *
 from update import update
 from feeder import *
-from lookup import advanced_lookup
+from lookup import lookup
 
 
 def handler(data, job_queue, name, need_session=False):
@@ -46,7 +46,8 @@ def monitor(data):
         time.sleep(60)
 
 
-def master(feeder_count=1, fetch_count=3, parse_count=2, update_count=1, lookup_count=2):
+
+def master(feeder_count=1, fetch_count=4, parse_count=2, update_count=1, lookup_count=1):
     """Master of all threads"""
 
     data = crawl_data()
@@ -65,7 +66,7 @@ def master(feeder_count=1, fetch_count=3, parse_count=2, update_count=1, lookup_
         ths.append(threading.Thread(target=update, args=(data, )))
 
     for i in range(lookup_count):
-        ths.append(threading.Thread(name="Lookup {}".format(i+1), target=advanced_lookup, args=(data, )))
+        ths.append(threading.Thread(name="Lookup {}".format(i+1), target=lookup, args=(data, )))
 
     for th in ths:
         th.start()

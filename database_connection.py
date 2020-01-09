@@ -51,8 +51,6 @@ class database_connection():
         if not len(data):
             return
         try:
-            with open("testfile", "a") as tst:
-                tst.write("INSERT INTO " + table + " (" + ",".join(data[0].keys()) + ") VALUES (" + "),(".join([",".join(val.values()) for val in data]) + ");\n\n")
             self.cur.execute("INSERT INTO " + table + " (" + ",".join(data[0].keys()) + ") VALUES (" + "),(".join([",".join(val.values()) for val in data]) + ");") 
         except Exception as e:
             self.reset()
