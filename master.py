@@ -7,6 +7,7 @@ import math
 from session import *
 from data import *
 from update import update
+from feeder import *
 
 
 def handler(data, job_queue, name, need_session=False):
@@ -24,7 +25,7 @@ def handler(data, job_queue, name, need_session=False):
             job(data, conn)
         except Exception as e:
             data.errors.append(e)
-            data.log.append("Error occurred while {} was working on a job : {}".format(name, str(e)))
+            print("Error occurred while {} was working on a job : {}".format(name, str(e)))
             pass
 
 
@@ -44,26 +45,26 @@ def monitor(data):
         time.sleep(60)
 
 
-def master(feeder_count=1, fetch_count=2, parse_count=2, update_count=1, lookup_count=1):
+def master(feeder_count=1, fetch_count=3, parse_count=2, update_count=1, lookup_count=2):
     """Master of all threads"""
 
     data = crawl_data()
     ths = []
 
     for i in range(feeder_count):
-        ths.append(threading.Thread(target=handler, args=(data, data.feed_queue, "Feeder {}".format(i), True,)))
+        ths.append(threading.Thread(name="Feeder {}".format(i+1), target=handler, args=(data, data.feed_queue, "Feeder {}".format(i+1), True,)))
   
     for i in range(fetch_count):
-        ths.append(threading.Thread(target=handler, args=(data, data.fetch_queue, "Fetcher {}".format(i), True,)))
+        ths.append(threading.Thread(name="Fetcher {}".format(i+1), target=handler, args=(data, data.fetch_queue, "Fetcher {}".format(i+1), True,)))
 
     for i in range(parse_count):
-        ths.append(threading.Thread(target=handler, args=(data, data.parse_queue, "Parser {}".format(i), False,)))
+        ths.append(threading.Thread(name="Parser {}".format(i+1), target=handler, args=(data, data.parse_queue, "Parser {}".format(i+1), False,)))
 
     for i in range(update_count):
         ths.append(threading.Thread(target=update, args=(data, )))
 
     for i in range(lookup_count):
-        ths.append(threading.Thread(target=handler, args=(data, data.lookup_queue, "Lookup {}".format(i), True,)))
+        ths.append(threading.Thread(name="Lookup {}".format(i+1), target=handler, args=(data, data.lookup_queue, "Lookup {}".format(i+1), True,)))
 
     for th in ths:
         th.start()

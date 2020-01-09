@@ -18,7 +18,7 @@ class extractor():
 
         vin_regex = re.compile("^(?=.*[0-9])(?=.*[A-z])[0-9A-z-]{17}$")
         if ad["vin"] and vin_regex.match(ad["vin"]):
-            puid = str(ad["vin"]) + str(math.floor(ad["mileage"] / 5000) * 5000) if ad["mileage"] is not None else str(cnt["vin"])
+            puid = str(ad["vin"]) + str(math.floor(ad["mileage"] / 5000) * 5000) if ad["mileage"] is not None else str(ad["vin"])
 
         return puid
             
@@ -45,7 +45,10 @@ class extractor():
             for filt in filters:
                 mtch = filters[filt].search(i)
                 if mtch:
-                    rtn[filt] = mtch.group(1)
+                    if filt == "vin":
+                        rtn[filt] = mtch.group(1).upper()
+                    else:
+                        rtn[filt] = mtch.group(1)
         return rtn
         
 

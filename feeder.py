@@ -2,6 +2,8 @@
 
 import time
 from fetch import *
+from bs4 import BeautifulSoup
+
 
 class BreakLoop(Exception): pass
 
@@ -43,8 +45,8 @@ def feeder(data, conn):
             pass
 
         # Update global variables. Put new posts from oldest to newest, to avoid gaps.
-        for i in range(0, len(posts), -1):
-            data.fetch_queue.put(lambda x, y: fetch(x, y, posts[i]))
+        for url in reversed(posts):
+            data.fetch_queue.put(lambda x, y, url=url: fetch(x, y, url))
         data.seen.update(seen)
 
     data.feed_queue.put(lambda x, y: feeder(x, y))

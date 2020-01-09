@@ -19,13 +19,14 @@ def lookup(data, conn, vin, year):
         if "Variable" in item:
             if item["Variable"] in fields:
                 fields[item["Variable"]] = item["Value"]
-        if all([value != 0 for key, value in fields]):
+        if all([fields[key] != 0 for key in fields]):
             break
 
-    if not all([value != 0 for key, value in fields]):
+    if not all([fields[key] != 0 for key in fields]):
         return
 
-    fields = {key.lower(): value for key, value in fields}
+    fields = {key.lower(): fields[key] for key in fields}
+    fields["vin"] = code
 
     # Write to database
     data.update_queue.put({"table": "vins", "value": fields})

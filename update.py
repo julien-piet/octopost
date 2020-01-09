@@ -6,7 +6,7 @@ from database_connection import *
 
 def update(data):
     """Function that updates the database"""
-    print("Starting updater")
+    print("Starting Updater")
     conn = database_connection()
 
     while True:
@@ -25,7 +25,7 @@ def update(data):
 
         except Exception as e:
             data.errors.append(e)
-            data.log.append("Error occurred while updated database : {}".format(str(e)))
+            print("Error occurred while updated database : {}".format(str(e)))
             pass
 
 
@@ -38,9 +38,10 @@ def sqlize(ipt):
     data = []
     for entry in ipt:
         data_point = {}
-        for key, value in entry:
+        for key in entry:
+            value = entry[key]
             if key in text_fields or key in date_fields:
-                data_point[key] = "'" + str(value) + "'" if value else "null"
+                data_point[key] = "'" + str(value).replace("'",'"') + "'" if value else "null"
             elif key in number_fields:
                 data_point[key] = str(value) if value else "null"
             elif key == "year":

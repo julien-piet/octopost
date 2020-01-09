@@ -32,7 +32,7 @@ class crawl_data():
         self.fetch_queue = FIFO(15000)
         self.parse_queue = FIFO(15000)
         self.lookup_queue = FIFO(15000)
-        self.update_queue = FIFO(15000, 250)
+        self.update_queue = FIFO(15000, 25)
 
         self.places = crawl_data.load_places()
         self.errors = []
@@ -40,6 +40,7 @@ class crawl_data():
         self.loaded = 0
         self.db = database_connection()
 
+        self.log = []
         self.seen = {url[0]: True for url in self.db.query("SELECT DISTINCT url FROM ads")}
         self.vins = {vin[0]: True for vin in self.db.query("SELECT DISTINCT vin FROM vins")}
 
