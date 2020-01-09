@@ -4,6 +4,7 @@ import queue
 from database_connection import *
 from bs4 import BeautifulSoup
 import requests
+from lookup import refresh_model_db
 
 
 class FIFO():
@@ -41,8 +42,11 @@ class crawl_data():
         self.db = database_connection()
 
         self.log = []
+        self.models = {}
         self.seen = {url[0]: True for url in self.db.query("SELECT DISTINCT url FROM ads")}
         self.vins = {vin[0]: True for vin in self.db.query("SELECT DISTINCT vin FROM vins")}
+
+        refresh_model_db(self)
 
     @staticmethod
     def load_places():
