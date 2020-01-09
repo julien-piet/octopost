@@ -26,9 +26,69 @@ class extractor():
     @staticmethod
     def get_model(bsc, data, cnt):
         """ Get model from VIN number """
-        # TODO : Get model if vin doesn't exist
-        return {}
-        
+
+        filt = re.compile("[A-HJ-NPR-Z0-9]{9}")
+        if ad["vin"]:
+            vin = ad["vin"][:9]
+            mtch = filt.search(vin)
+            if mtch:
+                return {}
+
+        make = ad["make"]
+        if make not in data.models:
+            return {}
+
+
+        # If we get here, we need to determine the vehicle model from the content of the ad
+        haystack = [[attr.text for attr in bsc.select(".attrgroup span")][0], \
+                    bsc.find(id="titletextonly").text, \
+                    bsc.find(id="postingbody").text]
+
+        model = None
+        trim = None
+        series = None
+
+        # Start search
+        for pile in haystack:
+            if model and trim and series:
+                break
+            for needle in pile.replace("*","").replace(".","").split(" ")
+                # First try : Is this a model name ? 
+                if not model and needle.lower() in data.models[make]["model_to_trim"].keys():
+                    model = needle.lower()
+
+                # Second try : Trim ?
+                if not trim and needle.lower() in data.models[make]["trim_to_model"].keys():
+                    trim = needle.lower()
+
+                # Third try : Series ?
+                if not series and needle.lower() in data.models[make]["series_to_model"].keys():
+                    series = needle.lower()
+
+                if (not model) and trim:
+                    if len(data.models[make]["trim_to_model"][trim]) == 1:
+                        model = data.models[make]["trim_to_model"][trim][0]
+
+                if (not model) and series:
+                    if len(data.models[make]["series_to_model"][series]) == 1:
+                        model = data.models[make]["series_to_model"][series][0]
+
+                if (not trim) and model:
+                    if len(data.models[make]["model_to_trim"][model]) == 0:
+                        trim = "NONE"
+                    if len(data.models[make]["model_to_trim"][model]) == 1:
+                        trim = data.models[make]["model_to_trim"][model][0]
+
+                if (not series) and model:
+                    if len(data.models[make]["model_to_series"][model]) == 0:
+                        series = "NONE"
+                    if len(data.models[make]["model_to_series"][model]) == 1:
+                        series = data.models[make]["model_to_series"][model][0]
+
+        results = {'model': model, 'trim': trim, 'series': series}
+        print(results)
+        return results
+
 
     @staticmethod
     def get_details(bsc):
@@ -138,7 +198,8 @@ class extractor():
     @staticmethod
     def get_price(bsc):
         try:
-            return int(bsc.select(".price")[0].text.replace("$",""))
+            val = int(bsc.select(".price")[0].text.replace("$",""))
+            return val if 0 < val < 70000000 else None
         except:
             pass
         
@@ -155,7 +216,7 @@ class extractor():
                 if val[-1] == 'k':
                     val = val[:-1] + "000"
                 val = val.replace(",","")
-                return int(val)
+                return int(val) if 0 < int(val) < 70000000 else None
                 
         return None
 

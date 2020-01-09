@@ -70,7 +70,37 @@ def refresh_model_db(data):
 
     # Finally, update local info
     sql = "SELECT make, model, series, trim FROM models;"
-    models = [{'make': item[0], 'model': item[1], 'series': item[2], 'trim': item[3]} for item in db.query(sql)]
+    models_raw = [{'make': item[0], 'model': item[1], 'series': item[2], 'trim': item[3]} for item in db.query(sql)]
+    models = {}
+    for item in models_raw:
+        make = makes[item["make"].lower()] if item["make"].lower() in makes else item["make"].lower()
+        if make not in models:
+            models[make] = {'model_to_trim': {}, 'model_to_series': {}, 'trim_to_model':{}, 'series_to_model':{}}
+
+        model = item["model"].lower()
+        trim = item["trim"].lower() if item["trim"] else None
+        series = item["series"].lower() if item["series"] else None
+
+        if model not in models[make]["model_to_trim"]:
+            models[make]["model_to_trim"][model] = []
+        if model not in models[make]["model_to_series"]:
+            models[make]["model_to_series"][model] = []
+        if trim and trim not in models[make]["trim_to_model"]:
+            models[make]["trim_to_model"][trim] = []
+        if series and series not in models[make]["series_to_model"]:
+            models[make]["series_to_model"][series] = []
+
+        if trim:
+            if trim not in models[make]["model_to_trim"][model]:
+                models[make]["model_to_trim"][model].append(trim)
+            if model not in models[make]["trim_to_model"][trim]:
+                models[make]["trim_to_model"][trim].append(model)
+        if series:
+            if series not in models[make]["model_to_series"][model]:
+                models[make]["model_to_series"][model].append(series)
+            if model not in models[make]["series_to_model"][series]:
+                models[make]["series_to_model"][series].append(model)
+
     data.models = models
 
     # Cleanup
@@ -108,4 +138,4 @@ def from_website_refresh(db, data):
 def norm(model):
     """ Removes any extra whitespace, or characters not essential to the model name """
     # TODO : Implement once the database is large enough
-    return model
+    return model.lower() if isinstance(model, basestring) else model

@@ -43,7 +43,7 @@ def sqlize(ipt):
             if key in text_fields or key in date_fields:
                 data_point[key] = "'" + str(value).replace("'",'"') + "'" if value else "null"
             elif key in number_fields:
-                data_point[key] = str(value) if value else "null"
+                data_point[key] = str(value) if value and -1073741824 < value < 1073741824 else "null"
             elif key == "year":
                 if value:
                     data_point["year"] = "'" + str(datetime.datetime.strptime(str(value) + "-01-02T00:00:00-0000", '%Y-%m-%dT%H:%M:%S%z')) + "'"
