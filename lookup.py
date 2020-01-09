@@ -59,14 +59,14 @@ def refresh_model_db(data):
 
     # First, get fresh models from vin database
     sql = "DELETE FROM models WHERE models.from_vins = 1;" \
-          "INSERT INTO models (SELECT DISTINCT make, model, series, trim, 1 FROM vins WHERE v.make is NOT NULL and v.model IS NOT NULL);"
-    db.query(sql)
+          "INSERT INTO models (SELECT DISTINCT make, model, series, trim, 1 FROM vins WHERE make is NOT NULL and model IS NOT NULL);"
+    db.query(sql, nofetch=True)
 
     # Second, see if it is time to refresh from website
     sql = "SELECT update_type, last, freq FROM freshness WHERE update_type = 'get_all_models' AND last + freq < CURRENT_TIMESTAMP;"
     if len(db.query(sql)) > 0:
         from_website_refresh(db, data)
-        db.query("UPDATE freshness SET last = CURRENT_TIMESTAMP WHERE update_type = 'get_all_models';")
+        db.query("UPDATE freshness SET last = CURRENT_TIMESTAMP WHERE update_type = 'get_all_models';",nofetch=True)
 
     # Finally, update local info
     sql = "SELECT make, model, series, trim FROM models;"
@@ -82,6 +82,9 @@ def from_website_refresh(db, data):
 
     conn = session(data)
 
+    # Load items from VINS that might intersect
+    baseline = {item[0] + "|" + item[1]: True for item in db.query("SELECT DISTINCT make, model from models WHERE from_vins = 1;")}
+
     # First load makes :
     makes_all = json.loads(conn.get("https://vpic.nhtsa.dot.gov/api/vehicles/getallmakes?format=json"))["Results"]
     makes_rest = []
@@ -93,11 +96,12 @@ def from_website_refresh(db, data):
     models = []
     for make in makes_rest:
         page = conn.get("https://vpic.nhtsa.dot.gov/api/vehicles/getmodelsformake/{}?format=json".format(make))
-        models.extend({'from_vins': 0, 'make': make, 'model': norm(item["Model_Name"])} for item in json.loads(page)["Results"] if item["Model_Name"])
+        models.extend({'from_vins': 0, 'make': make, 'model': norm(item["Model_Name"])} for item in json.loads(page)["Results"] if item["Model_Name"] and make + "|" + norm(item["Model_Name"]) not in baseline)
 
     # Finally, update database
     models = sqlize(models)
-    db.query("DELETE FROM models WHERE from_vins is NOT 1;")
+    db.query("DELETE FROM models WHERE from_vins IS DISTINCT FROM 1;", nofetch=True)
+
     db.write(table="models", data=models)
 
 

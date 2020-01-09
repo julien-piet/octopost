@@ -57,8 +57,11 @@ class database_connection():
             self.cur.execute("INSERT INTO " + table + " (" + ",".join(data[0].keys()) + ") VALUES (" + "),(".join([",".join(val.values()) for val in data]) + ");") 
 
     
-    def query(self, sql):
+    def query(self, sql, nofetch=False):
         self.cur.execute(sql)
-        rtn = self.cur.fetchall()
-        return rtn
+        if nofetch:
+            return
+        else:
+            rtn = self.cur.fetchall()
+            return rtn
 
