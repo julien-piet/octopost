@@ -4,7 +4,7 @@ import time
 import math
 
 
-def interact(data):
+def interact(data, ths):
     """ Code for interact module """
 
     help_string = """Help menu - you can use the following commands :
@@ -39,7 +39,7 @@ def interact(data):
             continue
 
         if mtch.group("exit"):
-            exit_gracefully(data)
+            exit_gracefully(data, ths)
             continue
 
         if mtch.group("dump") and mtch.group("buffer"):
@@ -143,6 +143,19 @@ def echo_to_console(data,buf,count):
     print("\n")
 
 
-def exit_gracefully(data):
+def exit_gracefully(data, ths):
     """ exit gracefully """
-    print("Not implemented yet\n")
+
+    if data.stop:
+        print("Buffers are still emptying, exit procedure has started")
+        return
+
+    # Set stop flag to true :
+    data.stop = True
+
+    # Join other processes
+    for th in ths:
+        th.join()
+
+    # Exit
+    exit(0)

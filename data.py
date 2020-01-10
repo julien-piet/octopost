@@ -22,8 +22,14 @@ class FIFO():
             item = self.list.get()
             return item
         else:
-            item = [self.list.get() for i in range(self.chunksize)]
-            return item
+            items = []
+            for i in range(self.chunksize):
+                item = self.list.get()
+                if item == "STOP":
+                    items.append("STOP")
+                    return items
+                items.append(item)
+            return items
 
 
 class crawl_data():
@@ -49,6 +55,7 @@ class crawl_data():
 
         refresh_model_db(self)
         self.start_time = time.time()
+        self.stop = False
 
     @staticmethod
     def load_places():

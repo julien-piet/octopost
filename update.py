@@ -14,6 +14,12 @@ def update(data):
         try:
             items = data.update_queue.pop()
 
+            # Exit condition
+            end = False
+            if items[-1] == "STOP":
+                items = items[:-1]
+                end = True
+
             updates = {}
             for item in items:
                 if item["table"] in updates:
@@ -33,6 +39,11 @@ def update(data):
                             SET model = vins.model, series = vins.series, trim = vins.trim \
                             FROM vins \
                             WHERE substring(ads.vin,1,9) = vins.vin AND ads.model is null;", True)
+
+            if end:
+                print("Stop signal received by updater")
+                conn.__del__()
+                return
 
 
         except Exception as e:

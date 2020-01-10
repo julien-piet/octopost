@@ -46,3 +46,23 @@ def vin_check(vin):
     except Exception:
         return False
 
+
+def stop_function(data):
+    """ Stops the program. To be run by a fetcher """
+
+    def end_func(d):
+        # To be run last
+        print("Stop signal received by parser")
+        d.update_queue.put("STOP")
+        d.lookup_queue.put("STOP")
+        exit(0)
+
+    def inter_func(d):
+        # To be run last by fetch
+        print("Stop signal received by fetcher")
+        d.parse_queue.put(lambda x, y: end_func(x))
+        exit(0)
+
+    print("Stop signal received by feeder")
+    data.fetch_queue.put(lambda x, y: inter_func(d))
+    exit(0)

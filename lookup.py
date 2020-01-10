@@ -20,6 +20,12 @@ def lookup(data):
         try:
             vins = data.lookup_queue.pop()
 
+            # Exit condition
+            end = False
+            if vins[-1] == "STOP":
+                vins = vins[:-1]
+                end = True
+
             post_data = {"DATA": "; ".join([", ".join([vin["vin"][:9], str(vin["year"])]) for vin in vins]), "format": "json"}
             base_url = "https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVINValuesBatch/"
 
@@ -39,6 +45,11 @@ def lookup(data):
             if refresh_counter > 2500:
                 refresh_model_db(data)
                 refresh_counter = 0
+
+            if end:
+                print("Stop signal received by lookup")
+                conn.__del__()
+                return
 
         except Exception as e:
             data.errors.append(e)

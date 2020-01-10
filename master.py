@@ -12,8 +12,10 @@ from lookup import lookup
 from interact import interact
 
 
-def handler(data, job_queue, name, need_session=False):
+def handler(data, job_queue, name, need_session=False, rate_limit=None):
     """Function that pops items and handles the job"""
+
+    start_time = time.time()
 
     data.log.append("Starting {}".format(name))
     if need_session:
@@ -29,6 +31,9 @@ def handler(data, job_queue, name, need_session=False):
             data.errors.append(e)
             data.log.append("Error occurred while {} was working on a job : {}".format(name, str(e)))
             pass
+        if rate_limit:
+            end_time = time.time()
+            time.sleep(max(0, rate_limit - (end_time - start_time)))
 
 
 def master(feeder_count=1, fetch_count=3, parse_count=3, update_count=1, lookup_count=1):
@@ -38,7 +43,7 @@ def master(feeder_count=1, fetch_count=3, parse_count=3, update_count=1, lookup_
     ths = []
 
     for i in range(feeder_count):
-        ths.append(threading.Thread(name="Feeder {}".format(i+1), target=handler, args=(data, data.feed_queue, "Feeder {}".format(i+1), True,)))
+        ths.append(threading.Thread(name="Feeder {}".format(i+1), target=handler, args=(data, data.feed_queue, "Feeder {}".format(i+1), True, 3600)))
   
     for i in range(fetch_count):
         ths.append(threading.Thread(name="Fetcher {}".format(i+1), target=handler, args=(data, data.fetch_queue, "Fetcher {}".format(i+1), True,)))

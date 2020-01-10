@@ -1,8 +1,8 @@
 """Feeder.py - fetch fresh urls"""
 
-import time
 from fetch import *
 from bs4 import BeautifulSoup
+from aux import *
 
 
 class BreakLoop(Exception): pass
@@ -10,8 +10,6 @@ class BreakLoop(Exception): pass
 
 def feeder(data, conn):
     """Fills fetch queue with new links"""
-
-    start_time = time.time()
 
     for site in data.places:
 
@@ -49,8 +47,8 @@ def feeder(data, conn):
             data.fetch_queue.put(lambda x, y, url=url: fetch(x, y, url))
         data.seen.update(seen)
 
-    data.feed_queue.put(lambda x, y: feeder(x, y))
+        if data.stop:
+            stop_function(data)
 
-    end_time = time.time()
-    time.sleep(max(0, 3600 - (end_time - start_time)))
+    data.feed_queue.put(lambda x, y: feeder(x, y))
 
