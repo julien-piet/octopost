@@ -9,12 +9,13 @@ from data import *
 from update import update
 from feeder import *
 from lookup import lookup
+from interact import interact
 
 
 def handler(data, job_queue, name, need_session=False):
     """Function that pops items and handles the job"""
 
-    print("Starting {}".format(name))
+    data.log.append("Starting {}".format(name))
     if need_session:
         conn = session(data)
     else:
@@ -26,25 +27,8 @@ def handler(data, job_queue, name, need_session=False):
             job(data, conn)
         except Exception as e:
             data.errors.append(e)
-            print("Error occurred while {} was working on a job : {}".format(name, str(e)))
+            data.log.append("Error occurred while {} was working on a job : {}".format(name, str(e)))
             pass
-
-
-def monitor(data):
-    """Thread to monitor queue and seen"""
-    start = time.time()
-    while True:
-        print("T" + str(math.floor(time.time() - start)) + \
-              " / F : " + str(data.fetch_queue.list.qsize()) + \
-              " / P : " + str(data.parse_queue.list.qsize()) + \
-              " / U : " + str(data.update_queue.list.qsize()) + \
-              " / L : " + str(data.lookup_queue.list.qsize()) + \
-              " / S : " + str(len(data.seen)) + \
-              " / E : " + str(len(data.errors)) + \
-              " / I : " + str(data.incompatible) + \
-              " / A : " + str(data.loaded))
-        time.sleep(60)
-
 
 
 def master(feeder_count=1, fetch_count=3, parse_count=3, update_count=1, lookup_count=1):
@@ -74,7 +58,7 @@ def master(feeder_count=1, fetch_count=3, parse_count=3, update_count=1, lookup_
     # Give first job
 
     data.feed_queue.put(lambda x, y: feeder(x, y))
-    monitor(data)
+    interact(data)
 
 
 master()

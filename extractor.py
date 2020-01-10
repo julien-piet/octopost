@@ -39,6 +39,7 @@ class extractor():
 
         make = ad["make"]
         if make not in data.models:
+            data.log.append("No known models for make {}. {}".format(make, ad["url"]))
             return result
 
         # If we get here, we need to determine the vehicle model from the content of the ad
@@ -116,6 +117,9 @@ class extractor():
 
 
         result = {'model': model, 'trim': trim, 'series': series}
+        if all(not result[key] for key in result):
+            data.log.append("No recognized models for {} with make {}".format(ad["url"], make))
+
         return result
 
 

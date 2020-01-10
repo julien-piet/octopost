@@ -12,7 +12,7 @@ import re
 def lookup(data):
     """ Handle multiple vins at a time """
 
-    print("Starting Lookup")
+    data.log.append("Starting Lookup")
     conn = session(data)
     refresh_counter = 0
 
@@ -42,7 +42,7 @@ def lookup(data):
 
         except Exception as e:
             data.errors.append(e)
-            print("Error occurred while looking up vins : {}".format(str(e)))
+            data.log.append("Error occurred while looking up vins : {}".format(str(e)))
             pass
 
 

@@ -5,6 +5,7 @@ from database_connection import *
 from bs4 import BeautifulSoup
 import requests
 from lookup import refresh_model_db
+import time
 
 
 class FIFO():
@@ -37,7 +38,7 @@ class crawl_data():
 
         self.places = crawl_data.load_places()
         self.errors = []
-        self.incompatible = 0
+        self.incompatible = []
         self.loaded = 0
         self.db = database_connection()
 
@@ -45,9 +46,9 @@ class crawl_data():
         self.models = {}
         self.seen = {url[0]: True for url in self.db.query("SELECT DISTINCT url FROM ads")}
         self.vins = {vin[0]: True for vin in self.db.query("SELECT DISTINCT vin FROM vins")}
-        self.seen = {}
 
         refresh_model_db(self)
+        self.start_time = time.time()
 
     @staticmethod
     def load_places():

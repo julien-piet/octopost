@@ -6,7 +6,7 @@ from database_connection import *
 
 def update(data):
     """Function that updates the database"""
-    print("Starting Updater")
+    data.log.append("Starting Updater")
     conn = database_connection()
     refresh_count = 0
 
@@ -23,6 +23,8 @@ def update(data):
 
             for table in updates:
                 conn.write(table,sqlize(updates[table]))
+                if table == "ads":
+                    data.loaded += len(updates[table])
 
             refresh_count += len(items)
             if refresh_count > 1000:
@@ -35,7 +37,7 @@ def update(data):
 
         except Exception as e:
             data.errors.append(e)
-            print("Error occurred while updated database : {}".format(str(e)))
+            data.log.append("Error occurred while updating database : {}".format(str(e)))
             pass
 
 

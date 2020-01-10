@@ -17,14 +17,13 @@ def parse(data, url, content):
            "url":       url}
     
     if ad["make"] is None:
-        data.incompatible += 1
+        data.incompatible.append(url)
         return
     
     ad.update(extractor.get_details(content))
     ad.update(extractor.get_model(content, data, ad))
     ad["puid"] = extractor.get_puid(ad)
 
-    data.loaded += 1
     data.update_queue.put({"table": "ads", "value": ad})
 
     # Search for VIN
