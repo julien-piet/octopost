@@ -27,66 +27,108 @@ class extractor():
     def get_model(bsc, data, ad):
         """ Get model from VIN number """
 
+        result = {"model": None, "trim": None, "series": None}
+
         filt = re.compile("[A-HJ-NPR-Z0-9]{9}")
         if ad["vin"]:
             vin = ad["vin"][:9]
             mtch = filt.search(vin)
             if mtch:
-                return {}
+                return result
 
         make = ad["make"]
         if make not in data.models:
-            return {}
+            return result
+
 
         # If we get here, we need to determine the vehicle model from the content of the ad
-        haystack = [[attr.text for attr in bsc.select(".attrgroup span")][0], \
-                    bsc.find(id="titletextonly").text, \
-                    bsc.find(id="postingbody").text]
+        haystack = [attr.text for attr in bsc.select(".attrgroup span")][0].replace("-","").lower() + " " + bsc.find(id="titletextonly").text.replace("-","").lower()
 
         model = None
         trim = None
         series = None
 
-        # Start search
-        for pile in haystack:
-            if model and trim and series:
-                break
-            for needle in pile.replace("*", "").replace(".", "").split(" "):
-                # First try : Is this a model name ? 
-                if not model and needle.lower() in data.models[make]["model_to_trim"].keys():
-                    model = needle.lower()
+        if make == "mercedes-benz":
+            # Mercedes-specific filter
+            f1 = re.compile("(?:^| )([1-9][0-9]0?)[ ]?(eqc|gla|glb|glc|gle|glk|gls|cla|cls|clk|slc|slk|sls|gl|ml|sl|cl|a|b|c|e|g|s|r|m)(?:$| )")
+            f2 = re.compile("(?:^| )(eqc|gla|glb|glc|gle|glk|gls|cla|cls|clk|slc|slk|sls|gl|ml|sl|cl|a|b|c|e|g|s|r|m)[ ]?([1-9][0-9]0?)(?:$| )")
+            f3 = re.compile("(?:^| )(eqc|gla|glb|glc|gle|glk|gls|cla|cls|clk|slc|slk|sls|gl|ml|sl|cl|a|b|c|e|g|s|r|m)(?:$| )")
 
-                # Second try : Trim ?
-                if not trim and needle.lower() in data.models[make]["trim_to_model"].keys():
-                    trim = needle.lower()
 
-                # Third try : Series ?
-                if not series and needle.lower() in data.models[make]["series_to_model"].keys():
-                    series = needle.lower()
+            full_text = [attr.text for attr in bsc.select(".attrgroup span")][0].lower() + " " + bsc.find(id="titletextonly").text.lower()
+            mtch = f1.search(full_text)
+            if mtch:
+                vol = mtch.group(1)
+                abbr = mtch.group(2)
+                model = abbr + "class"
+                series = abbr + vol 
+                result = {"model": model, "trim": trim, "series": series}
+                return result
 
-                if (not model) and trim:
-                    if len(data.models[make]["trim_to_model"][trim]) == 1:
-                        model = data.models[make]["trim_to_model"][trim][0]
+            mtch = f2.search(full_text)
+            if mtch:
+                vol = mtch.group(2)
+                abbr = mtch.group(1)
+                model = abbr + "class"
+                series = abbr + vol 
+                result = {"model": model, "trim": trim, "series": series}
+                return result
 
-                if (not model) and series:
-                    if len(data.models[make]["series_to_model"][series]) == 1:
-                        model = data.models[make]["series_to_model"][series][0]
+            mtch = f3.search(full_text)
+            if mtch:
+                abbr = mtch.group(1)
+                model = abbr + "class"
+                result = {"model": model, "trim": trim, "series": series}
+                return result
 
-                if (not trim) and model:
-                    if len(data.models[make]["model_to_trim"][model]) == 0:
-                        trim = "NONE"
-                    if len(data.models[make]["model_to_trim"][model]) == 1:
-                        trim = data.models[make]["model_to_trim"][model][0]
 
-                if (not series) and model:
-                    if len(data.models[make]["model_to_series"][model]) == 0:
-                        series = "NONE"
-                    if len(data.models[make]["model_to_series"][model]) == 1:
-                        series = data.models[make]["model_to_series"][model][0]
+        # Build search regex
+        model_regex = data.models[make]["model_regex"]
+        mtch = model_regex.search(haystack)
+        if mtch:
+                model = mtch.group(1)
 
-        results = {'model': model, 'trim': trim, 'series': series}
-        print(results)
-        return results
+        trims = None
+        series_list = None
+        if model:
+            trims = data.models[make]["model_to_trim"][model]
+            series_list = data.models[make]["model_to_series"][model]
+        else:
+            trims = data.models[make]["trim_regex"]
+            series_list = data.models[make]["series_regex"]
+
+        if trims:
+            trim_regex = build_model_regex_from_list(trims, make) if model else trims
+            mtch = trim_regex.search(haystack)
+            if mtch:
+                trim = mtch.group(1)
+
+        if series_list:
+            series_regex = build_model_regex_from_list(series_list, make) if model else series_list
+            mtch = series_regex.search(haystack)
+            if mtch:
+                series = mtch.group(1)
+
+        if (not model) and trim:
+            if len(data.models[make]["trim_to_model"][trim]) == 1:
+                model = data.models[make]["trim_to_model"][trim][0]
+
+        if (not model) and series:
+            if len(data.models[make]["series_to_model"][series]) == 1:
+                model = data.models[make]["series_to_model"][series][0]
+
+        if (not trim) and model:
+            if len(data.models[make]["model_to_trim"][model]) == 1:
+                trim = data.models[make]["model_to_trim"][model][0]
+
+        if (not series) and model:
+            if len(data.models[make]["model_to_series"][model]) == 1:
+                series = data.models[make]["model_to_series"][model][0]
+
+
+        result = {'model': model, 'trim': trim, 'series': series}
+        return result
+
 
     @staticmethod
     def get_details(bsc):
@@ -139,7 +181,7 @@ class extractor():
         attr = [attr.text for attr in bsc.select(".attrgroup span")]
         for i in attr:
             if not i.find("odometer: "):
-                return min(int(i[9:]), 9999999)
+                return min(int(i[9:]), 1000000)
 
         # If we get here, the odometer wasn't specified. Look in body / title
         # Title of ad :
@@ -155,7 +197,7 @@ class extractor():
                 if val[-1] == 'k':
                     val = val[:-1] + "000"
                 val = val.replace(",", "")
-                return min(int(val), 9999999)
+                return min(int(val), 1000000)
 
         return None
 
@@ -230,3 +272,15 @@ class extractor():
         except Exception as e:
             raise e
             return None
+
+
+def build_model_regex_from_list(names, make=None):
+    """ Builds search regex """
+    if make in reverse_makes:
+        blacklist = reverse_makes[make]
+    else:
+        blacklist = []
+    items = [re.escape(item) for item in names if item not in blacklist]
+    items.sort(key=len, reverse=True)
+    return re.compile("(?:^| )(" + "|".join(items) + ")(?:$|[0-9,\.;\* ])")
+

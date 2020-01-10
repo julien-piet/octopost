@@ -15,20 +15,21 @@ def parse(data, url, content):
            "price":     extractor.get_price(content), \
            "update":    extractor.get_update(content), \
            "url":       url}
-    ad.update(extractor.get_details(content))
-    ad.update(extractor.get_model(content, data, ad))
-
-    ad["puid"] = extractor.get_puid(ad)
-
+    
     if ad["make"] is None:
         data.incompatible += 1
-    else:
-        data.loaded += 1
-        data.update_queue.put({"table": "ads", "value": ad})
+        return
+    
+    ad.update(extractor.get_details(content))
+    ad.update(extractor.get_model(content, data, ad))
+    ad["puid"] = extractor.get_puid(ad)
 
-        # Search for VIN
-        if ad["vin"] and 9 <= len(ad["vin"]) <= 17 and ad["vin"][:9] not in data.vins:
-            data.vins[ad["vin"][:9]] = True
-            vin, year = ad["vin"], ad["year"]
-            # data.lookup_queue.put(lambda x, y, vin=vin, year=year: lookup(x, y, vin, year))
-            data.lookup_queue.put({'vin': vin, 'year': year})
+    data.loaded += 1
+    data.update_queue.put({"table": "ads", "value": ad})
+
+    # Search for VIN
+    if ad["vin"] and 9 <= len(ad["vin"]) <= 17 and ad["vin"][:9] not in data.vins:
+        data.vins[ad["vin"][:9]] = True
+        vin, year = ad["vin"], ad["year"]
+        # data.lookup_queue.put(lambda x, y, vin=vin, year=year: lookup(x, y, vin, year))
+        data.lookup_queue.put({'vin': vin, 'year': year})

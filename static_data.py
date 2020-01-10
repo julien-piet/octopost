@@ -58,6 +58,7 @@ makes = {"abarth": "abarth", \
 "lada": "lada", \
 "lamborghini": "lamborghini", \
 "lancia": "lancia", \
+"land": "land rover", \
 "land rover": "land rover", \
 "landwind": "landwind", \
 "lexus": "lexus", \
@@ -92,11 +93,11 @@ makes = {"abarth": "abarth", \
 "proton": "proton", \
 "ram": "ram", \
 "renault": "renault", \
-"rolls-royce": "rolls-royce", \
-"rolls": "rolls-royce", \
-"royce": "rolls-royce", \
+"rolls-royce": "rolls royce", \
+"rolls": "rolls royce", \
+"royce": "rolls royce", \
 "romeo": "alfa romeo", \
-"rover": "rover", \
+"rover": "land rover", \
 "saab": "saab", \
 "saturn": "saturn", \
 "scion": "scion", \
@@ -120,4 +121,13 @@ makes = {"abarth": "abarth", \
 "vw": "volkswagen", \
 "yugo": "yugo"}
 
+
+reverse_makes = {}
+for key in makes:
+    if key == "corvette":
+        continue
+    make = makes[key]
+    if make not in reverse_makes:
+        reverse_makes[make] = []
+    reverse_makes[make].append(key)
 

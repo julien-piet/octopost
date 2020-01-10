@@ -47,7 +47,7 @@ def monitor(data):
 
 
 
-def master(feeder_count=1, fetch_count=4, parse_count=2, update_count=1, lookup_count=1):
+def master(feeder_count=1, fetch_count=3, parse_count=3, update_count=1, lookup_count=1):
     """Master of all threads"""
 
     data = crawl_data()

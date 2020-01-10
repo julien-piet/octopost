@@ -5,6 +5,7 @@ from session import *
 from database_connection import *
 from static_data import *
 from update import sqlize
+from extractor import build_model_regex_from_list
 
 
 def lookup(data):
@@ -34,7 +35,7 @@ def lookup(data):
 
             # Check for refresh
             refresh_counter += len(vins)
-            if refresh_counter > 1000:
+            if refresh_counter > 2500:
                 refresh_model_db(data)
                 refresh_counter = 0
 
@@ -70,16 +71,16 @@ def refresh_model_db(data):
 
     # Finally, update local info
     sql = "SELECT make, model, series, trim FROM models;"
-    models_raw = [{'make': item[0], 'model': item[1], 'series': item[2], 'trim': item[3]} for item in db.query(sql)]
+    models_raw = [{'make': item[0].strip(), 'model': item[1], 'series': item[2], 'trim': item[3]} for item in db.query(sql)]
     models = {}
     for item in models_raw:
-        make = makes[item["make"].lower()] if item["make"].lower() in makes else item["make"].lower()
+        make = makes[item["make"].lower()].strip() if item["make"].lower() in makes else item["make"].lower()
         if make not in models:
             models[make] = {'model_to_trim': {}, 'model_to_series': {}, 'trim_to_model':{}, 'series_to_model':{}}
 
-        model = item["model"].lower()
-        trim = item["trim"].lower() if item["trim"] else None
-        series = item["series"].lower() if item["series"] else None
+        model = norm(item["model"])
+        trim = norm(item["trim"])
+        series = norm(item["series"])
 
         if model not in models[make]["model_to_trim"]:
             models[make]["model_to_trim"][model] = []
@@ -100,6 +101,14 @@ def refresh_model_db(data):
                 models[make]["model_to_series"][model].append(series)
             if model not in models[make]["series_to_model"][series]:
                 models[make]["series_to_model"][series].append(model)
+
+    for make in models:
+        model_list = models[make]["model_to_trim"].keys()
+        models[make]["model_regex"] = build_model_regex_from_list(model_list, make)
+        trim_list = models[make]["trim_to_model"].keys()
+        models[make]["trim_regex"] = build_model_regex_from_list(trim_list, make)
+        series_list = models[make]["series_to_model"].keys()
+        models[make]["series_regex"] = build_model_regex_from_list(series_list, make)
 
     data.models = models
 
@@ -138,4 +147,8 @@ def from_website_refresh(db, data):
 def norm(model):
     """ Removes any extra whitespace, or characters not essential to the model name """
     # TODO : Implement once the database is large enough
-    return model.lower() if isinstance(model, basestring) else model
+    if isinstance(model, str):
+        model = model.replace("-","")
+        model = re.sub(r"[ ]{2,}"," ",model)
+        model = model.strip()
+    return model

@@ -8,6 +8,7 @@ def update(data):
     """Function that updates the database"""
     print("Starting Updater")
     conn = database_connection()
+    refresh_count = 0
 
     while True:
         try:
@@ -22,6 +23,15 @@ def update(data):
 
             for table in updates:
                 conn.write(table,sqlize(updates[table]))
+
+            refresh_count += len(items)
+            if refresh_count > 1000:
+                refresh_count = 0
+                conn.query("UPDATE ads \
+                            SET model = vins.model, series = vins.series, trim = vins.trim \
+                            FROM vins \
+                            WHERE substring(ads.vin,1,9) = vins.vin AND ads.model is null;", True)
+
 
         except Exception as e:
             data.errors.append(e)
