@@ -1,5 +1,7 @@
 """VIN decoding - Build a database of makes and models """
 
+# FIXME It would be better if broken vin checks lead to doing a hard search for the model, (3% of cases)
+
 import json
 from session import *
 from database_connection import *
