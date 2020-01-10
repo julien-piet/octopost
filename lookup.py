@@ -6,6 +6,7 @@ from database_connection import *
 from static_data import *
 from update import sqlize
 from extractor import build_model_regex_from_list
+import re
 
 
 def lookup(data):
