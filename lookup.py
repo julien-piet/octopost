@@ -1,13 +1,11 @@
 """VIN decoding - Build a database of makes and models """
 
-# FIXME It would be better if broken vin checks lead to doing a hard search for the model, (3% of cases)
-
 import json
 from session import *
 from database_connection import *
 from static_data import *
 from update import sqlize
-from extractor import build_model_regex_from_list
+from aux import *
 import re
 
 
@@ -147,11 +145,3 @@ def from_website_refresh(db, data):
     db.write(table="models", data=models)
 
 
-def norm(model):
-    """ Removes any extra whitespace, or characters not essential to the model name """
-    # TODO : Implement once the database is large enough
-    if isinstance(model, str):
-        model = model.replace("-","").lower()
-        model = re.sub(r"[ ]{2,}"," ",model)
-        model = model.strip()
-    return model

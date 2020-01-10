@@ -45,6 +45,7 @@ class crawl_data():
         self.models = {}
         self.seen = {url[0]: True for url in self.db.query("SELECT DISTINCT url FROM ads")}
         self.vins = {vin[0]: True for vin in self.db.query("SELECT DISTINCT vin FROM vins")}
+        self.seen = {}
 
         refresh_model_db(self)
 

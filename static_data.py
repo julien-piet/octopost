@@ -55,6 +55,7 @@ makes = {"abarth": "abarth", \
 "kia": "kia", \
 "kenworth": "kenworth", \
 "ktm": "ktm", \
+"koenigsegg": "koenigsegg", \
 "lada": "lada", \
 "lamborghini": "lamborghini", \
 "lancia": "lancia", \

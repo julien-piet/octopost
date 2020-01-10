@@ -3,6 +3,11 @@ import re
 import math
 import datetime
 from static_data import *
+from aux import *
+# Import constructor specific parsers :
+import make_specific.mercedes as mercedes
+import make_specific.jaguar as jaguar
+import make_specific.mazda as mazda
 
 
 class extractor():
@@ -29,17 +34,12 @@ class extractor():
 
         result = {"model": None, "trim": None, "series": None}
 
-        filt = re.compile("[A-HJ-NPR-Z0-9]{9}")
-        if ad["vin"]:
-            vin = ad["vin"][:9]
-            mtch = filt.search(vin)
-            if mtch:
-                return result
+        if ad["vin"] and vin_check(ad["vin"]):
+            return result
 
         make = ad["make"]
         if make not in data.models:
             return result
-
 
         # If we get here, we need to determine the vehicle model from the content of the ad
         haystack = [attr.text for attr in bsc.select(".attrgroup span")][0].replace("-","").lower() + " " + bsc.find(id="titletextonly").text.replace("-","").lower()
@@ -48,38 +48,27 @@ class extractor():
         trim = None
         series = None
 
-        if make == "mercedes-benz":
-            # Mercedes-specific filter
-            f1 = re.compile("(?:^| )([1-9][0-9]0?)[ ]?(eqc|gla|glb|glc|gle|glk|gls|cla|cls|clk|slc|slk|sls|gl|ml|sl|cl|a|b|c|e|g|s|r|m)(?:$| )")
-            f2 = re.compile("(?:^| )(eqc|gla|glb|glc|gle|glk|gls|cla|cls|clk|slc|slk|sls|gl|ml|sl|cl|a|b|c|e|g|s|r|m)[ ]?([1-9][0-9]0?)(?:$| )")
-            f3 = re.compile("(?:^| )(eqc|gla|glb|glc|gle|glk|gls|cla|cls|clk|slc|slk|sls|gl|ml|sl|cl|a|b|c|e|g|s|r|m)(?:$| )")
-
+        # Make-specific parsers
+        if make in ["mercedes-benz", "jaguar", "mazda"]:
 
             full_text = [attr.text for attr in bsc.select(".attrgroup span")][0].lower() + " " + bsc.find(id="titletextonly").text.lower()
-            mtch = f1.search(full_text)
-            if mtch:
-                vol = mtch.group(1)
-                abbr = mtch.group(2)
-                model = abbr + "class"
-                series = abbr + vol 
-                result = {"model": model, "trim": trim, "series": series}
-                return result
+            if make == "mercedes-benz":
+                # Mercedes-specific filter
+                parse_result = mercedes.get_model(full_text)
+                if parse_result:
+                    return parse_result
 
-            mtch = f2.search(full_text)
-            if mtch:
-                vol = mtch.group(2)
-                abbr = mtch.group(1)
-                model = abbr + "class"
-                series = abbr + vol 
-                result = {"model": model, "trim": trim, "series": series}
-                return result
+            if make == "jaguar":
+                # Jaguar-specific filter
+                parse_result = jaguar.get_model(full_text)
+                if parse_result:
+                    return parse_result
 
-            mtch = f3.search(full_text)
-            if mtch:
-                abbr = mtch.group(1)
-                model = abbr + "class"
-                result = {"model": model, "trim": trim, "series": series}
-                return result
+            if make == "mazda":
+                # Mazda-specific filter
+                parse_result = mazda.get_model(full_text)
+                if parse_result:
+                    return parse_result
 
 
         # Build search regex
@@ -272,15 +261,4 @@ class extractor():
         except Exception as e:
             raise e
             return None
-
-
-def build_model_regex_from_list(names, make=None):
-    """ Builds search regex """
-    if make in reverse_makes:
-        blacklist = reverse_makes[make]
-    else:
-        blacklist = []
-    items = [re.escape(item) for item in names if item not in blacklist]
-    items.sort(key=len, reverse=True)
-    return re.compile("(?:^| )(" + "|".join(items) + ")(?:$|[0-9,\.;\* ])")
 
