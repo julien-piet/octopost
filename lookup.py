@@ -149,7 +149,7 @@ def norm(model):
     """ Removes any extra whitespace, or characters not essential to the model name """
     # TODO : Implement once the database is large enough
     if isinstance(model, str):
-        model = model.replace("-","")
+        model = model.replace("-","").lower()
         model = re.sub(r"[ ]{2,}"," ",model)
         model = model.strip()
     return model
