@@ -33,7 +33,7 @@ def update(data):
                     data.loaded += len(updates[table])
 
             refresh_count += len(items)
-            if refresh_count > 1000:
+            if refresh_count > 1000 or end:
                 refresh_count = 0
                 conn.query("UPDATE ads \
                             SET model = vins.model, series = vins.series, trim = vins.trim \
