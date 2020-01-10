@@ -60,9 +60,11 @@ def stop_function(data):
     def inter_func(d):
         # To be run last by fetch
         print("Stop signal received by fetcher")
-        d.parse_queue.put(lambda x, y: end_func(x))
+        for i in range(data.th_count['parse']):
+            d.parse_queue.put(lambda x, y: end_func(x))
         exit(0)
 
     print("Stop signal received by feeder")
-    data.fetch_queue.put(lambda x, y: inter_func(d))
+    for i in range(data.th_count['fetch']):
+        data.fetch_queue.put(lambda x, y: inter_func(x))
     exit(0)

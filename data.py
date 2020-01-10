@@ -34,13 +34,13 @@ class FIFO():
 
 class crawl_data():
 
-    def __init__(self):
+    def __init__(self, feeders, fetchers, parsers):
         """Initialize global variables"""
-        self.feed_queue = FIFO(15000)
-        self.fetch_queue = FIFO(15000)
-        self.parse_queue = FIFO(15000)
-        self.lookup_queue = FIFO(15000, 25)
-        self.update_queue = FIFO(15000, 25)
+        self.feed_queue = FIFO(500)
+        self.fetch_queue = FIFO(500)
+        self.parse_queue = FIFO(500)
+        self.lookup_queue = FIFO(500, 25)
+        self.update_queue = FIFO(500, 25)
 
         self.places = crawl_data.load_places()
         self.errors = []
@@ -56,6 +56,7 @@ class crawl_data():
         refresh_model_db(self)
         self.start_time = time.time()
         self.stop = False
+        self.th_count={'feeder': feeders, 'fetch': fetchers, 'parse': parsers}
 
     @staticmethod
     def load_places():

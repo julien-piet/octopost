@@ -39,7 +39,7 @@ def handler(data, job_queue, name, need_session=False, rate_limit=None):
 def master(feeder_count=1, fetch_count=3, parse_count=3, update_count=1, lookup_count=1):
     """Master of all threads"""
 
-    data = crawl_data()
+    data = crawl_data(feeder_count, fetch_count, parse_count)
     ths = []
 
     for i in range(feeder_count):
@@ -63,7 +63,7 @@ def master(feeder_count=1, fetch_count=3, parse_count=3, update_count=1, lookup_
     # Give first job
 
     data.feed_queue.put(lambda x, y: feeder(x, y))
-    interact(data)
+    interact(data, ths)
 
 
 master()
