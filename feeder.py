@@ -16,6 +16,7 @@ def feeder(data, conn):
         posts = []
         seen = {}
         try:
+            number_of_seen = 0
             for loop in range(0,26):
                 content = conn.get(site + "search/cta?s=" + str(loop*120) + "&sort=date&bundleDuplicates=1")
                 if not content: break
@@ -32,7 +33,9 @@ def feeder(data, conn):
 
                     # If this ad has already been seen in a previous iteration, stop
                     elif ad["href"] in data.seen:
-                        raise BreakLoop()
+                        number_of_seen += 1
+                        if number_of_seen > 10:
+                            raise BreakLoop()
 
                     # if this ad hasn't been seen yet in this iteration, add
                     elif not ad["href"] in seen:
@@ -46,6 +49,8 @@ def feeder(data, conn):
         for url in reversed(posts):
             data.fetch_queue.put(lambda x, y, url=url: fetch(x, y, url))
         data.seen.update(seen)
+
+        data.log.append("{} new posts from {}".format(len(posts), site))
 
         if data.stop:
             stop_function(data)
