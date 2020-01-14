@@ -16,7 +16,7 @@ def parse(data, url, content):
            "update":    extractor.get_update(content), \
            "url":       url}
     
-    if ad["make"] is None:
+    if ad["make"] is None or ad["geo"] is None or (not ad["mileage"] and not ad["price"]):
         data.incompatible.append(url)
         return
     

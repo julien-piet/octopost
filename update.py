@@ -55,7 +55,7 @@ def update(data):
 def sqlize(ipt):
     """ Returns a sql compatible representation of the input """
     text_fields = ['title', 'make', 'condition', 'color', 'vin', 'type', 'url', 'car_title', 'puid', "model", 'trim', 'series']
-    number_fields = ['mileage', 'price', 'from_vins']
+    number_fields = ['mileage', 'price', 'from_vins', 'new']
     date_fields = ["post_date", "update"]
 
     data = []

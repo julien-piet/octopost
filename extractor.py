@@ -14,19 +14,17 @@ class extractor():
 
     @staticmethod
     def get_puid(ad):
-        puid = str(ad["make"]) + str(ad["mileage"]) + str(ad["year"])
-        if not ad["mileage"]:
-            puid += str(ad["price"])
+        if ad["vin"] and vin_check(ad["vin"]):
+            puid = str(ad["vin"]) + str(math.floor(ad["mileage"] / 5000) * 5000) if ad["mileage"] is not None else str(
+                ad["vin"])
+        else:
+            puid = str(ad["make"]) + str(ad["mileage"] if ad["mileage"] else ad["price"]) + str(ad["year"]) + str(ad["model"])
+
         geo = ad["geo"]
         if geo:
             puid += str(math.floor(int(geo["latitude"]) * 25) / 25) + str(math.floor(int(geo["longitude"]) * 25) / 25)
 
-        vin_regex = re.compile("^(?=.*[0-9])(?=.*[A-z])[0-9A-z-]{17}$")
-        if ad["vin"] and vin_regex.match(ad["vin"]):
-            puid = str(ad["vin"]) + str(math.floor(ad["mileage"] / 5000) * 5000) if ad["mileage"] is not None else str(
-                ad["vin"])
-
-        return puid
+        return hash(puid)
 
     @staticmethod
     def get_model(bsc, data, ad):
