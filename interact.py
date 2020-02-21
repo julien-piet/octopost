@@ -16,7 +16,7 @@ def interact(data, ths):
     stats ---------------------------------- get advancement stats
     help ----------------------------------- show this menu"""
 
-    match_regex = re.compile("(?P<status>status)|(?P<exit>exit)|(?P<stats>stats)|(?P<help>(?:help|h))|(?:(?P<dump>dump)|(?P<write>write)|(?P<echo>echo)) (?P<buffer>errors|inconsistent|log)(?: (?P<param>.*))?")
+    match_regex = re.compile("(?P<status>status)|(?P<exit>exit)|(?P<stats>stats)|(?P<help>(?:help|h))|(?:(?P<dump>dump)|(?P<write>write)|(?P<echo>echo)) (?P<buffer>errors|debug|inconsistent|log)(?: (?P<param>.*))?")
 
     while True:
         command = input('octopost : ')
@@ -85,9 +85,9 @@ def stats(data):
         average_speed = math.floor(60 * data.loaded / (time.time() - data.start_time))
 
         print("""Stats :
-                * Error ratio          : {}
-                * Unparsed ratio       : {}
-                * Ads saved per minute : {}\n""".format(error_ratio, unparsed_ratio, average_speed))
+                * Error ratio          : {}%
+                * Unparsed ratio       : {}%
+                * Ads saved per minute : {}\n""".format('%.3f'%(100*error_ratio), '%.3f'%(100*unparsed_ratio), average_speed))
     except Exception:
         print("Not enough data yet. Try again soon\n")
 
@@ -104,6 +104,9 @@ def select_buffer(data, buf):
     if buf == "log":
         return data.log
 
+    if buf == "debug":
+        return data.debug
+
     return None
 
 
@@ -116,6 +119,8 @@ def dump(data, buf):
         data.incompatible = []
     elif buf == "log":
         data.log = []
+    elif buf == "debug":
+        data.debug = []
 
     print("Buffer emptied \n")
 
@@ -124,7 +129,7 @@ def dump(data, buf):
 def write_to_file(data,buf,filename):
     """ write content of buffer to file """
     with open(filename, 'w') as outfile:
-        outfile.write(str(select_buffer(data, buf)))
+        outfile.write('\n'.join(select_buffer(data, buf)))
     print("Succesfully written to file \n")
 
 
@@ -156,6 +161,9 @@ def exit_gracefully(data, ths):
     # Join other processes
     for th in ths:
         th.join()
+
+    # Write debug to file
+    write_to_file(data, "debug", "debug.txt")
 
     # Exit
     exit(0)

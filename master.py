@@ -63,6 +63,11 @@ def master(feeder_count=1, fetch_count=3, parse_count=3, update_count=1, lookup_
     # Give first job
 
     data.feed_queue.put(lambda x, y: feeder(x, y))
+
+#    vins = [{"vin": item[0], "year": str(math.floor(float(item[1])))} for item in data.db.query("select vin, max(extract(year from year)) from ads where model is null and substr(vin,1,9) not in (select vin from vins) group by vin;")]
+#    for vin in vins:
+#        data.lookup_queue.put(vin)
+
     interact(data, ths)
 
 

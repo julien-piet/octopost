@@ -1,6 +1,7 @@
 """Feeder.py - fetch fresh urls"""
 
 from fetch import *
+from parse import *
 from bs4 import BeautifulSoup
 from aux import *
 

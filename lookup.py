@@ -7,6 +7,7 @@ from static_data import *
 from update import sqlize
 from aux import *
 import re
+import time
 
 
 def lookup(data):
@@ -15,6 +16,7 @@ def lookup(data):
     data.log.append("Starting Lookup")
     conn = session(data)
     refresh_counter = 0
+    last_refresh = time.time()
 
     while True:
         try:
@@ -26,15 +28,21 @@ def lookup(data):
                 vins = vins[:-1]
                 end = True
 
-            post_data = {"DATA": "; ".join([", ".join([vin["vin"][:9], str(vin["year"])]) for vin in vins]), "format": "json"}
+            data.debug.append("VINS to be searched : {}".format(str([vin for vin in vins])))
+
+            post_data = {"DATA": "; ".join([", ".join([vin["vin"], str(vin["year"])]) for vin in vins]), "format": "json"}
             base_url = "https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVINValuesBatch/"
 
             cnt = conn.post(base_url, post_data)
             info = json.loads(cnt)["Results"]
 
             # Fetch model and trim
-            fields = [{"vin": item["VIN"], "model": norm(item["Model"]), "series": norm(item["Series"]), "trim": norm(item["Trim"]),
-                       "make": item["Make"]} for item in info]
+            fields = [{"vin": item["VIN"][:9], "model": norm(item["Model"]), "series": norm(item["Series"]), "trim": norm(item["Trim"]),
+                       "make": item["Make"]} for item in info if item["Make"] and item["Model"]]
+
+            new_vins = {field["vin"]: True for field in fields}
+            # Log errors
+            data.debug.append("Uncomputed VINS : {}".format(str([vin for vin in vins if vin["vin"][:9] not in new_vins])))
 
             # Write to database
             for field in fields:
@@ -42,7 +50,8 @@ def lookup(data):
 
             # Check for refresh
             refresh_counter += len(vins)
-            if refresh_counter > 2500:
+            if refresh_counter > 2500 or time.time() - last_refresh > 900:
+                last_refresh = time.time()
                 refresh_model_db(data)
                 refresh_counter = 0
 
@@ -151,7 +160,7 @@ def from_website_refresh(db, data):
 
     # Finally, update database
     models = sqlize(models)
-    db.query("DELETE FROM models WHERE from_vins IS DISTINCT FROM 1;", nofetch=True)
+    db.query("DELETE FROM models WHERE from_vins = 0;", nofetch=True)
 
     db.write(table="models", data=models)
 

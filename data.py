@@ -49,9 +49,12 @@ class crawl_data():
         self.db = database_connection()
 
         self.log = []
+        self.debug = []
         self.models = {}
         self.seen = {url[0]: True for url in self.db.query("SELECT DISTINCT url FROM ads")}
         self.vins = {vin[0]: True for vin in self.db.query("SELECT DISTINCT vin FROM vins")}
+        self.seen.update({url[0]: True for url in self.db.query("SELECT DISTINCT url FROM inconsistent_ads")})
+        self.seen.update({url[0]: True for url in self.db.query("SELECT DISTINCT url FROM ads_archive")})
 
         refresh_model_db(self)
         self.start_time = time.time()

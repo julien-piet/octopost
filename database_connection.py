@@ -65,3 +65,8 @@ class database_connection():
             rtn = self.cur.fetchall()
             return rtn
 
+
+    def query_smart(self, sql):
+        self.cur.execute(sql)
+        colnames = [desc[0] for desc in self.cur.description]
+        return [{colnames[i]: item[i] for i in range(len(colnames))} for item in self.cur.fetchall()]

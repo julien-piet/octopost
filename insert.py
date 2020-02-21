@@ -1,21 +1,21 @@
-""" Update database """
+""" Insert into SQL database """
 
 import datetime
 from database_connection import *
-import time
 from aux import *
+import time
 
 
 def update(data):
     """Function that updates the database"""
-    data.log.append("Starting Updater")
+    data.log.append("Starting Inserter")
     conn = database_connection()
     last_refresh = time.time()
     last_archive = time.time()
 
     while True:
         try:
-            items = data.update_queue.pop()
+            items = data.insert_queue.pop()
 
             # Exit condition
             end = False
@@ -23,43 +23,34 @@ def update(data):
                 items = items[:-1]
                 end = True
 
-            updates = {}
+            inserts = {}
             for item in items:
                 if item["table"] in updates:
-                    updates[item["table"]].append(item["value"])
+                    inserts[item["table"]].append(item["value"])
                 else:
-                    updates[item["table"]] = [item["value"]]
+                    inserts[item["table"]] = [item["value"]]
 
-            for table in updates:
-
-                if table == "refresh":
-                    # We need to remove the previous entries before inserting
-                    url = ["'{}'".format(item['url']) for item in updates[table]]
-                    sql = "DELETE FROM refresh WHERE url in ({})".format(','.join(url))
-                    conn.write(sql, True)
-
-                conn.write(table,sqlize(updates[table]))
+            for table in inserts:
+                conn.write(table,sqlize(inserts[table]))
                 if table == "ads":
-                    data.loaded += len(updates[table])
+                    data.loaded += len(inserts[table])
 
             if time.time() - last_refresh > 1000 or end:
                 last_refresh = time.time()
                 set_models(conn)
-
             
             if time.time() - last_archive > 86400 or end:
                 last_archive = time.time()
                 archive(conn)
 
-
             if end:
-                print("Stop signal received by updater")
+                print("Stop signal received by inserter")
                 conn.__del__()
                 return
 
 
         except Exception as e:
             data.errors.append(e)
-            data.log.append("Error occurred while updating database : {}".format(str(e)))
+            data.log.append("Error occurred while inserting to database : {}".format(str(e)))
             pass
 

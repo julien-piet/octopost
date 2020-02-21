@@ -13,18 +13,25 @@ import make_specific.mazda as mazda
 class extractor():
 
     @staticmethod
+    def is_expired(bsc):
+        return len(bsc.select(".removed")) != 0
+
+
+    @staticmethod
     def get_puid(ad):
-        if ad["vin"] and vin_check(ad["vin"]):
+        if ad["vin"]:
             puid = str(ad["vin"]) + str(math.floor(ad["mileage"] / 5000) * 5000) if ad["mileage"] is not None else str(
                 ad["vin"])
         else:
             puid = str(ad["make"]) + str(ad["mileage"] if ad["mileage"] else ad["price"]) + str(ad["year"]) + str(ad["model"])
 
         geo = ad["geo"]
-        if geo:
+        if geo and not ad["vin"]:
             puid += str(math.floor(int(geo["latitude"]) * 25) / 25) + str(math.floor(int(geo["longitude"]) * 25) / 25)
+        elif geo:
+            puid += str(math.floor(int(geo["latitude"]) * 5) / 5) + str(math.floor(int(geo["longitude"]) * 5) / 5)
 
-        return hash(puid)
+        return str(puid)
 
     @staticmethod
     def get_model(bsc, data, ad):
@@ -41,7 +48,7 @@ class extractor():
             return result
 
         # If we get here, we need to determine the vehicle model from the content of the ad
-        haystack = [attr.text for attr in bsc.select(".attrgroup span")][0].replace("-","").lower() + " " + bsc.find(id="titletextonly").text.replace("-","").lower()
+        haystack = ([attr.text for attr in bsc.select(".attrgroup span")][0].replace("-","").lower() + " " + bsc.find(id="titletextonly").text.replace("-","").lower()).replace(str(ad["year"]),"")
 
         model = None
         trim = None
@@ -140,7 +147,13 @@ class extractor():
                         rtn[filt] = mtch.group(1).upper()
                     else:
                         rtn[filt] = mtch.group(1)
+
+        # Check vin
+        if not (rtn["vin"] and vin_check(rtn["vin"])):
+            rtn["vin"] = None
+        
         return rtn
+
 
     @staticmethod
     def get_title(bsc):
@@ -221,11 +234,12 @@ class extractor():
 
         return None
 
+
     @staticmethod
     def get_price(bsc):
         try:
             val = int(bsc.select(".price")[0].text.replace("$", ""))
-            return val if 0 < val < 70000000 else None
+            return val if 99 < val < 70000000 else None
         except:
             pass
 
@@ -235,16 +249,22 @@ class extractor():
 
         for haystack in haystacks:
             hsk = haystack.replace("\n", " ").strip().lower()
-            hsk = re.sub(r"[*-\[\]]", "", hsk)
+            hsk = re.sub(r"[\*\-\[\]]", "", hsk)
             mtch = filt.search(hsk)
             if mtch:
                 val = mtch.group(1)
                 if val[-1] == 'k':
                     val = val[:-1] + "000"
                 val = val.replace(",", "")
-                return int(val) if 0 < int(val) < 70000000 else None
+                try:
+                    assert(int(val) > 99)
+                    assert(int(val) < 70000000)
+                    return int(val)
+                except:
+                    pass
 
         return None
+
 
     @staticmethod
     def get_postdate(bsc):
