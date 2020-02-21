@@ -9,3 +9,6 @@ venv/
 *.png
 *.pyc
 helpers.py*
+debug.txt
+test*
+debug_old.txt
