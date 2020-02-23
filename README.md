@@ -44,7 +44,7 @@ To install on your local machine :
 `tar xvf db_dump.tar`
 
 8. Install database
-`pg_restore -d cars db_dump_file`
+`pg_restore -d [database_name] db_dump_file`
 
 9. Update database.ini with your database credentials
 
