@@ -63,7 +63,16 @@ def status(data):
     make_count  = len(data.models.keys())
     model_count = sum(len(data.models[make]["model_to_trim"].keys()) for make in data.models)
 
-    print("Elapsed : " + time.strftime("%H:%M:%S", time.gmtime(time.time() - data.start_time)) + \
+    elapsed = math.floor(time.time() - data.start_time)
+    hours, minutes, seconds = elapsed // 3600, (elapsed%3600) // 60, elapsed%60
+
+    if minutes < 10:
+        minutes = "0" + str(minutes)
+    
+    if seconds < 10:
+        seconds = "0" + str(seconds)
+
+    print("Elapsed : {}:{}:{}".format(hours,minutes,seconds) + \
           "\n * Fetch queue size       : " + str(data.fetch_queue.list.qsize()) + \
           "\n * Parse queue size       : " + str(data.parse_queue.list.qsize()) + \
           "\n * Update queue size      : " + str(data.update_queue.list.qsize()) + \

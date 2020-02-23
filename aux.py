@@ -176,5 +176,18 @@ def archive(conn):
 def duplicate_database(conn):
     """ Duplicate database to webdatabase for speed """
 
-    conn.query("DELETE FROM ads_web;", True)
-    conn.query("INSERT INTO ads_web (SELECT * FROM ads);", True)
+    sql = """
+    CREATE TABLE ads_web_2 AS (select * from ads where model is not null or vin is null);
+    CREATE INDEX make_model_i ON ads_web_2(make,model);
+    CREATE INDEX mileage_i ON ads_web_2(mileage);
+    CREATE INDEX price_i on ads_web_2(price);
+    CREATE INDEX puid_i on ads_web_2(puid);
+    CREATE INDEX year_i on ads_web_2(year);
+    CREATE INDEX post_date_i on ads_web_2(post_date);
+    CREATE INDEX id_i on ads_web(id);
+    DROP TABLE ads_web;
+    ALTER TABLE ads_web_2 RENAME TO ads_web;
+    """
+    
+    conn.query(geo, True)
+    
