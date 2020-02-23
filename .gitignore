@@ -13,3 +13,4 @@ debug.txt
 test*
 debug_old.txt
 unimplemented/*
+.idea/*
