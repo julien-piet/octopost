@@ -32,12 +32,6 @@ def update(data):
 
             for table in updates:
 
-                if table == "refresh":
-                    # We need to remove the previous entries before inserting
-                    url = ["'{}'".format(item['url']) for item in updates[table]]
-                    sql = "DELETE FROM refresh WHERE url in ({})".format(','.join(url))
-                    conn.write(sql, True)
-
                 conn.write(table,sqlize(updates[table]))
                 if table == "ads":
                     data.loaded += len(updates[table])

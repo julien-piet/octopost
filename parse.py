@@ -8,11 +8,11 @@ import datetime
 def parse(data, url, content, prev_content=None):
     """Parser for Craigslist pages"""
 
-	if extractor.is_expired(content):
+    if extractor.is_expired(content):
         if not prev_content:
             return
-        data.update_queue.put({"table": "refresh", "value": {"url": url, "expired": True}})
-		return
+        # data.update_queue.put({"table": "refresh", "value": {"url": url, "expired": True}})
+        return
 
     ad = {"title":     extractor.get_title(content), \
            "make":      extractor.get_make(content), \
@@ -39,8 +39,8 @@ def parse(data, url, content, prev_content=None):
         ad["refresh_for"] = ad["puid"]
     else:
         # If this isn't anything new, write to refresh list so that we don't try again
-        if datetime.timestamp(ad["update"]) == datetime.timestamp(prev_content["update"])
-            data.update_queue.put({"table": "refresh", "value": {'url': url, 'expired': False}})
+        if datetime.timestamp(ad["update"]) == datetime.timestamp(prev_content["update"]):
+            # data.update_queue.put({"table": "refresh", "value": {'url': url, 'expired': False}})
             return
 
         # Only do the slow operations if necessary
@@ -51,7 +51,7 @@ def parse(data, url, content, prev_content=None):
         ad["refresh_for"] = prev_content["refresh_for"]
 
 
-    data.update_queue.put({"table": "refresh", "value": {'url': url, 'expired': False}})
+    # data.update_queue.put({"table": "refresh", "value": {'url': url, 'expired': False}})
     data.update_queue.put({"table": "ads", "value": ad})
     
     # Search for VIN

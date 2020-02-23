@@ -12,3 +12,4 @@ helpers.py*
 debug.txt
 test*
 debug_old.txt
+unimplemented/*
