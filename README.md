@@ -76,7 +76,7 @@ This is also where we take care of syncing the database. At fixed intervals, the
 
 #### Lookup
 
-As for the updater, the lookup thread uses bulk calls to the NHTSA API in order to speed up the process. The structure of a **V**ehicle **I**dentification **N**umber is decripted here[https://en.wikipedia.org/wiki/Vehicle_identification_number]. VINs have 17 digits, the first 9 identify a unique model of a car, while the last 8 identify the specific car. This means that we only have to compare the first 9 digits of VINs in order to fully determine the model, series and trim. 
+As for the updater, the lookup thread uses bulk calls to the NHTSA API in order to speed up the process. The structure of a **V**ehicle **I**dentification **N**umber is decripted [here](https://en.wikipedia.org/wiki/Vehicle_identification_number). VINs have 17 digits, the first 9 identify a unique model of a car, while the last 8 identify the specific car. This means that we only have to compare the first 9 digits of VINs in order to fully determine the model, series and trim. 
 
 ### Database
 
