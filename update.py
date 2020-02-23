@@ -11,6 +11,7 @@ def update(data):
     data.log.append("Starting Updater")
     conn = database_connection()
     last_refresh = time.time()
+    last_duplicate = time.time()
     last_archive = time.time()
 
     while True:
@@ -40,7 +41,10 @@ def update(data):
                 last_refresh = time.time()
                 set_models(conn)
 
-            
+            if time.time() - last_duplicate > 3600 or end:
+                last_duplicate = time.time()
+                duplicate_database(conn)
+
             if time.time() - last_archive > 86400 or end:
                 last_archive = time.time()
                 archive(conn)

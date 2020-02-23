@@ -172,3 +172,9 @@ def archive(conn):
     conn.query("INSERT INTO ads_archive (SELECT * FROM ads where expired or post_date < current_timestamp - interval '30 days');", True)
     conn.query("DELETE from ads where id in (SELECT id FROM ads_archive);", True)
 
+
+def duplicate_database(conn):
+    """ Duplicate database to webdatabase for speed """
+
+    conn.query("DELETE FROM ads_web;", True)
+    conn.query("INSERT INTO ads_web (SELECT * FROM ads);", True)
