@@ -189,5 +189,5 @@ def duplicate_database(conn):
     ALTER TABLE ads_web_2 RENAME TO ads_web;
     """
     
-    conn.query(geo, True)
+    conn.query(sql, True)
     

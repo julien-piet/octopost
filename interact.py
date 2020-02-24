@@ -172,7 +172,7 @@ def exit_gracefully(data, ths):
         th.join()
 
     # Write debug to file
-    write_to_file(data, "debug", "debug.txt")
+    # write_to_file(data, "debug", "debug.txt")
 
     # Exit
     exit(0)
