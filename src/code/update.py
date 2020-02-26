@@ -1,9 +1,9 @@
 """ Update database """
 
 import datetime
-from database_connection import *
+from .database_connection import *
 import time
-from aux import *
+from .aux import *
 
 
 def update(data):

@@ -1,7 +1,7 @@
 """ Fetch.py - load a craigslist ad """
 
-from extractor import *
-from lookup import *
+from .extractor import *
+from .lookup import *
 import datetime
 
 

@@ -1,4 +1,4 @@
-from aux import *
+from code.aux import *
 import sys
 
 try:

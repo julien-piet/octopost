@@ -2,6 +2,7 @@
 
 from configparser import ConfigParser
 import psycopg2
+import os
 
 
 class database_connection():
@@ -22,9 +23,9 @@ class database_connection():
         return params
 
 
-    def __init__(self, filename="database.ini", section="postgresql"):
+    def __init__(self, filename="cred/database.ini", section="postgresql"):
         try:
-            self.params = database_connection.config()
+            self.params = database_connection.config(filename)
             self.conn = psycopg2.connect(**self.params)
             self.conn.set_session(autocommit=True)
             self.cur = self.conn.cursor()
@@ -34,8 +35,10 @@ class database_connection():
 
 
     def __del__(self):
-        if self.conn is not None:
+        try:
             self.conn.close()
+        except:
+            pass
     
 
     def reset(self):

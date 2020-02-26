@@ -4,12 +4,12 @@ import time
 import threading
 import math
 
-from session import *
-from data import *
-from update import update
-from feeder import *
-from lookup import lookup
-from interact import interact
+from code.session import *
+from code.data import *
+from code.update import update
+from code.feeder import *
+from code.lookup import lookup
+from code.interact import interact
 
 
 def handler(data, job_queue, name, need_session=False, rate_limit=None):

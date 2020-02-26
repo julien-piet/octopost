@@ -1,7 +1,7 @@
 """ Fetch.py - load a craigslist ad """
 
 from bs4 import BeautifulSoup
-from parse import parse
+from .parse import parse
 
 def fetch(data, conn, url, prev_content=None):
     """Specific handler for Craigslist pages"""

@@ -1,11 +1,11 @@
 """VIN decoding - Build a database of makes and models """
 
 import json
-from session import *
-from database_connection import *
-from static_data import *
-from update import sqlize
-from aux import *
+from .session import *
+from .database_connection import *
+from .static_data import *
+from .update import sqlize
+from .aux import *
 import re
 import time
 

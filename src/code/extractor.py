@@ -2,12 +2,12 @@
 import re
 import math
 import datetime
-from static_data import *
-from aux import *
+from .static_data import *
+from .aux import *
 # Import constructor specific parsers :
-import make_specific.mercedes as mercedes
-import make_specific.jaguar as jaguar
-import make_specific.mazda as mazda
+import code.make_specific.mercedes as mercedes
+import code.make_specific.jaguar as jaguar
+import code.make_specific.mazda as mazda
 
 
 class extractor():

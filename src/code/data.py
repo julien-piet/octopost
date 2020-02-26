@@ -1,10 +1,10 @@
 """ Data structures """
 
 import queue
-from database_connection import *
+from .database_connection import *
 from bs4 import BeautifulSoup
 import requests
-from lookup import refresh_model_db
+from .lookup import refresh_model_db
 import time
 
 

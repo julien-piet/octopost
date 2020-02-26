@@ -1,7 +1,7 @@
 """Auxiliary functions"""
 import re
 import datetime
-from static_data import *
+from .static_data import *
 
 
 def build_model_regex_from_list(names, make=None):
@@ -178,15 +178,15 @@ def duplicate_database(conn):
 
     sql = """
     CREATE TABLE ads_web_2 AS (select * from ads where model is not null or vin is null);
-    CREATE INDEX make_model_i ON ads_web_2(make,model);
-    CREATE INDEX mileage_i ON ads_web_2(mileage);
-    CREATE INDEX price_i on ads_web_2(price);
-    CREATE INDEX puid_i on ads_web_2(puid);
-    CREATE INDEX year_i on ads_web_2(year);
-    CREATE INDEX post_date_i on ads_web_2(post_date);
-    CREATE INDEX id_i on ads_web(id);
     DROP TABLE ads_web;
     ALTER TABLE ads_web_2 RENAME TO ads_web;
+    CREATE INDEX make_model_i ON ads_web(make,model);
+    CREATE INDEX mileage_i ON ads_web(mileage);
+    CREATE INDEX price_i on ads_web(price);
+    CREATE INDEX puid_i on ads_web(puid);
+    CREATE INDEX year_i on ads_web(year);
+    CREATE INDEX post_date_i on ads_web(post_date);
+    CREATE INDEX id_i on ads_web(id);
     """
     
     conn.query(sql, True)

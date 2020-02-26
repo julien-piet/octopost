@@ -25,7 +25,7 @@ There are 5 types of threads in Octopost
 
 The following is a diagram of the program :
 
-![Code diagram](code_diagram.png)
+![Code diagram](doc/code_diagram.png)
 
 ### Specifications 
 
@@ -87,7 +87,7 @@ There are three important tables in the database
 
 ## Usage
 
-Run `python master.py`
+Run `python master.py` in the src directory
 
 Once the interpreter starts, type `help` to see your options
 
@@ -112,14 +112,14 @@ To install on your local machine :
 6. Activate postGIS in that database by running `CREATE EXTENSION postgis;` after you connect with `psql [database_name]`
 
 7. Unzip database dump
-`tar xvf db_dump.tar`
+`tar xvf doc/db_dump.tar`
 
 8. Install database
 `pg_restore -d [database_name] db_dump_file`
 
-9. Update database.ini with your database credentials
+9. Update src/cred/database.ini with your database credentials
 
-10. Run 
+10. Run in src
 `python master.py`
 
 

@@ -1,9 +1,9 @@
 """Feeder.py - fetch fresh urls"""
 
-from fetch import *
-from parse import *
+from .fetch import *
+from .parse import *
 from bs4 import BeautifulSoup
-from aux import *
+from .aux import *
 
 
 class BreakLoop(Exception): pass
