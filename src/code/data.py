@@ -64,4 +64,5 @@ class crawl_data():
     @staticmethod
     def load_places():
         ct = BeautifulSoup(requests.get("https://www.craigslist.org/about/sites#US").text, features="html.parser")
+        print(ct)
         return [a["href"] for a in ct.select(".colmask")[0].select("a")]

@@ -7,10 +7,18 @@ def get_model(text):
     f1 = re.compile("(?:^| )([1-9][0-9]0?)[ ]?(eqc|gla|glb|glc|gle|glk|gls|cla|cls|clk|slc|sel|sec|slk|sls|gl|ml|sl|cl|ce|a|b|c|e|g|s|r|m)(?:$| )")
     f2 = re.compile("(?:^| )(eqc|gla|glb|glc|gle|glk|gls|cla|cls|clk|slc|sel|sec|slk|sls|gl|ml|sl|cl|ce|a|b|c|e|g|s|r|m)[ ]?([1-9][0-9]0?)(?:$| )")
     f3 = re.compile("(?:^| )(eqc|gla|glb|glc|gle|glk|gls|cla|cls|clk|slc|sel|sec|slk|sls|gl|ml|sl|cl|ce|a|b|c|e|g|s|r|m)(?:$| )")
+    f4 = re.compile("(?:^| )(w|W)[ ]?(114|115)(?:$| )")
 
     model  = None
     trim   = None
     series = None
+
+    mtch = f4.search(text)
+    if mtch:
+        model = "e class"
+        series = "W114/5"
+        result = {"model": model, "trim": trim, "series": series}
+        return result
 
     mtch = f1.search(text)
     if mtch:

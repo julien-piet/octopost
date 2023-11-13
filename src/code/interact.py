@@ -2,10 +2,14 @@
 import re
 import time
 import math
+from .aux import duplicate_database
+from .database_connection import *
 
 
 def interact(data, ths):
     """ Code for interact module """
+
+    conn = database_connection()
 
     help_string = """Help menu - you can use the following commands :
     status --------------------------------- get the advancement stats of the crawler
@@ -14,9 +18,10 @@ def interact(data, ths):
     echo (errors|inconsistent|log) [N=5] --- print the N last entries of the selected buffer
     exit ----------------------------------- exits the program gracefully, after emptying the buffers
     stats ---------------------------------- get advancement stats
+    force-update --------------------------- update web database
     help ----------------------------------- show this menu"""
 
-    match_regex = re.compile("(?P<status>status)|(?P<exit>exit)|(?P<stats>stats)|(?P<help>(?:help|h))|(?:(?P<dump>dump)|(?P<write>write)|(?P<echo>echo)) (?P<buffer>errors|debug|inconsistent|log)(?: (?P<param>.*))?")
+    match_regex = re.compile("(?P<status>status)|(?P<forceupdate>force-update)|(?P<exit>exit)|(?P<stats>stats)|(?P<help>(?:help|h))|(?:(?P<dump>dump)|(?P<write>write)|(?P<echo>echo)) (?P<buffer>errors|debug|inconsistent|log)(?: (?P<param>.*))?")
 
     while True:
         command = input('octopost : ')
@@ -36,6 +41,10 @@ def interact(data, ths):
 
         if mtch.group("stats"):
             stats(data)
+            continue
+
+        if mtch.group("forceupdate"):
+            duplicate_database(conn)
             continue
 
         if mtch.group("exit"):

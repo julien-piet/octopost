@@ -29,7 +29,7 @@ def parse(data, url, content, prev_content=None):
     # Seperate functionality if this is an update or an initial ad
     if not prev_content:
         # This is a first ad
-        if ad["make"] is None or ad["geo"] is None or not ad["price"]:
+        if (ad["make"] is None) or (ad["geo"] is None) or (not ad["price"]) or ("lease" in ad["title"].lower()):
             data.incompatible.append(url)
             data.update_queue.put({"table": "inconsistent_ads", "value": {'url': url}})
             return
